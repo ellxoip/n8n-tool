@@ -44,13 +44,22 @@ if (env.PYTHON_PATH) {
 
 console.log(`Starting n8n with N8N_USER_FOLDER=${env.N8N_USER_FOLDER}`);
 
-const command = process.platform === 'win32' ? 'cmd.exe' : 'npx';
-const args = process.platform === 'win32' ? ['/d', '/s', '/c', 'npx.cmd n8n'] : ['n8n'];
+const localN8nCmd = path.join(root, 'node_modules', '.bin', process.platform === 'win32' ? 'n8n.cmd' : 'n8n');
+const command = process.platform === 'win32'
+  ? (process.env.ComSpec || path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'cmd.exe'))
+  : 'npx';
+const args = process.platform === 'win32' ? ['/d', '/c', localN8nCmd] : ['n8n'];
 const child = spawn(command, args, {
   cwd: root,
   env,
   stdio: 'inherit',
   shell: false,
+});
+
+child.on('error', (err) => {
+  console.error(`Failed to start n8n: ${err.message}`);
+  console.error(`Command: ${command} ${args.join(' ')}`);
+  process.exit(1);
 });
 
 child.on('exit', (code, signal) => {
