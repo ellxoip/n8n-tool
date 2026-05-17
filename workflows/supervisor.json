@@ -1,0 +1,225 @@
+{
+  "name": "👑 Supervisor Maestro de Agentes",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Eres el Supervisor Maestro de un equipo de Agentes de IA.\n\nTu objetivo es orquestar y delegar tareas a tu equipo de especialistas cuando sea necesario. No tienes que hacerlo todo tú mismo.\n\nTus especialistas son:\n1. delegar_programador: Especialista en escribir código nuevo desde cero.\n2. delegar_analista: Especialista en investigar, razonar y hacer análisis de datos (DeepSeek R1).\n3. delegar_revisor: Especialista en auditar, optimizar y encontrar errores en código existente.\n\nFlujo de Trabajo:\n1. Analiza lo que el usuario pide.\n2. Si es una tarea compleja, divídela en pasos.\n3. Llama a las herramientas (tus agentes) pasándoles instrucciones claras de lo que deben hacer.\n4. Si los agentes devuelven JSON, lee el campo 'output' para entender su respuesta.\n5. Junta las respuestas de tus agentes y presenta el resultado final al usuario de forma clara."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [620, 340],
+      "id": "agent-supervisor",
+      "name": "Supervisor Maestro"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [360, 340],
+      "id": "chat-trigger-supervisor",
+      "name": "Chat Trigger",
+      "webhookId": "agente-supervisor"
+    },
+    {
+      "parameters": {
+        "model": "mistral-small:latest",
+        "options": {
+          "temperature": 0.2,
+          "numCtx": 4096
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [480, 560],
+      "id": "ollama-supervisor",
+      "name": "Modelo de Enrutamiento",
+      "credentials": {
+        "ollamaApi": {
+          "id": "2ZvFCywyv1aOV0Ft",
+          "name": "Ollama IPv4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "supervisor-session",
+        "contextWindowLength": 30
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [620, 560],
+      "id": "memory-supervisor",
+      "name": "Memoria del Proyecto"
+    },
+    {
+      "parameters": {
+        "name": "delegar_programador",
+        "description": "Pide al Agente Programador que escriba código. Pásale como 'query' una instrucción súper clara de qué código debe crear.",
+        "method": "POST",
+        "url": "http://127.0.0.1:5678/webhook/agente-programador/chat",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "action",
+              "value": "sendMessage"
+            },
+            {
+              "name": "sessionId",
+              "value": "supervisor-delegation"
+            },
+            {
+              "name": "chatInput",
+              "value": "={{$parameter.query}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [760, 560],
+      "id": "tool-programmer",
+      "name": "Llamar Programador"
+    },
+    {
+      "parameters": {
+        "name": "delegar_analista",
+        "description": "Pide al Agente Analista que resuelva un problema lógico complejo o haga research. Pásale como 'query' el contexto y problema a analizar.",
+        "method": "POST",
+        "url": "http://127.0.0.1:5678/webhook/agente-analista/chat",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "action",
+              "value": "sendMessage"
+            },
+            {
+              "name": "sessionId",
+              "value": "supervisor-delegation"
+            },
+            {
+              "name": "chatInput",
+              "value": "={{$parameter.query}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [900, 560],
+      "id": "tool-analyst",
+      "name": "Llamar Analista"
+    },
+    {
+      "parameters": {
+        "name": "delegar_revisor",
+        "description": "Pide al Agente Revisor que audite, mejore o debuggee un código. Pásale como 'query' el código y lo que quieres que revise.",
+        "method": "POST",
+        "url": "http://127.0.0.1:5678/webhook/agente-revisor/chat",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "action",
+              "value": "sendMessage"
+            },
+            {
+              "name": "sessionId",
+              "value": "supervisor-delegation"
+            },
+            {
+              "name": "chatInput",
+              "value": "={{$parameter.query}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [1040, 560],
+      "id": "tool-reviewer",
+      "name": "Llamar Revisor"
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "Supervisor Maestro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo de Enrutamiento": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Supervisor Maestro",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria del Proyecto": {
+      "ai_memory": [
+        [
+          {
+            "node": "Supervisor Maestro",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar Programador": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor Maestro",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar Analista": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor Maestro",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar Revisor": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor Maestro",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

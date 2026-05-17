@@ -1,0 +1,148 @@
+{
+  "name": "🔎 Agente Revisor de Código (deepseek-coder-v2)",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Eres un Agente especializado en Revisión y Optimización de Código.\n\nTu trabajo consiste en:\n1. Auditar código buscando vulnerabilidades o ineficiencias.\n2. Sugerir refactorizaciones para mejorar la legibilidad y el rendimiento.\n3. Ayudar a depurar (debuggear) errores complejos.\n\nPuedes usar tus herramientas para ejecutar pruebas breves en JavaScript o para consultar documentación en línea."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [620, 340],
+      "id": "agent-reviewer",
+      "name": "Agente Revisor"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [360, 340],
+      "id": "chat-trigger-reviewer",
+      "name": "Chat Trigger",
+      "webhookId": "agente-revisor"
+    },
+    {
+      "parameters": {
+        "model": "deepseek-coder-v2:16b",
+        "options": {
+          "temperature": 0.2,
+          "numCtx": 8192
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [480, 560],
+      "id": "ollama-ds-coder-model",
+      "name": "DeepSeek Coder v2 16B",
+      "credentials": {
+        "ollamaApi": {
+          "id": "2ZvFCywyv1aOV0Ft",
+          "name": "Ollama IPv4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "cli-session",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [620, 560],
+      "id": "memory-reviewer",
+      "name": "Memoria de Sesión"
+    },
+    {
+      "parameters": {
+        "name": "test_codigo",
+        "description": "Ejecuta fragmentos de código JavaScript para validar su funcionamiento o testear tus sugerencias.",
+        "language": "javaScript",
+        "jsCode": "return { result: 'Test ejecutado' };"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.1,
+      "position": [760, 560],
+      "id": "tool-code-reviewer",
+      "name": "Test de Código JS"
+    },
+    {
+      "parameters": {
+        "name": "buscar_docs",
+        "description": "Realiza solicitudes HTTP para buscar documentación o ejemplos en línea.",
+        "method": "GET",
+        "url": "https://httpbin.org/get",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [900, 560],
+      "id": "tool-http-reviewer",
+      "name": "Buscar Docs"
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "Agente Revisor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Coder v2 16B": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Revisor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria de Sesión": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente Revisor",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test de Código JS": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Revisor",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Docs": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Revisor",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

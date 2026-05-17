@@ -1,0 +1,125 @@
+{
+  "name": "DevOps Runtime Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Eres el agente DevOps y Runtime del equipo n8n AI Team. Tu trabajo es validar instalacion, variables de entorno, comandos, logs, health checks, conectividad local, n8n, Ollama, modelos, webhooks, importacion y activacion de workflows. Responde con pasos verificables, comandos para Windows y riesgos concretos. No pidas secretos; indica que deben ir en .env o vault."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [620, 340],
+      "id": "agent-devops",
+      "name": "Agente DevOps"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [360, 340],
+      "id": "chat-trigger-devops",
+      "name": "Chat Trigger",
+      "webhookId": "agente-devops"
+    },
+    {
+      "parameters": {
+        "model": "mistral-small:latest",
+        "options": {
+          "temperature": 0.2,
+          "numCtx": 8192
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [480, 560],
+      "id": "ollama-devops-model",
+      "name": "Mistral Small DevOps",
+      "credentials": {
+        "ollamaApi": {
+          "id": "2ZvFCywyv1aOV0Ft",
+          "name": "Ollama IPv4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "cli-session",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [620, 560],
+      "id": "memory-devops",
+      "name": "Memoria Runtime"
+    },
+    {
+      "parameters": {
+        "name": "diagnostico_runtime",
+        "description": "Devuelve una lista de checks runtime locales que el usuario debe ejecutar.",
+        "language": "javaScript",
+        "jsCode": "return { checks: ['node --version', 'npm run team:doctor', 'curl http://localhost:5678/healthz', 'curl http://localhost:11434/api/tags'] };"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.1,
+      "position": [760, 560],
+      "id": "tool-code-devops",
+      "name": "Diagnostico Runtime"
+    },
+    {
+      "parameters": {
+        "name": "health_n8n",
+        "description": "Consulta healthz de n8n local.",
+        "method": "GET",
+        "url": "http://localhost:5678/healthz",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [900, 560],
+      "id": "tool-http-devops-n8n",
+      "name": "Health n8n"
+    },
+    {
+      "parameters": {
+        "name": "health_ollama",
+        "description": "Consulta modelos disponibles en Ollama local.",
+        "method": "GET",
+        "url": "http://localhost:11434/api/tags",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [1040, 560],
+      "id": "tool-http-devops-ollama",
+      "name": "Health Ollama"
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {
+      "main": [[{ "node": "Agente DevOps", "type": "main", "index": 0 }]]
+    },
+    "Mistral Small DevOps": {
+      "ai_languageModel": [[{ "node": "Agente DevOps", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Memoria Runtime": {
+      "ai_memory": [[{ "node": "Agente DevOps", "type": "ai_memory", "index": 0 }]]
+    },
+    "Diagnostico Runtime": {
+      "ai_tool": [[{ "node": "Agente DevOps", "type": "ai_tool", "index": 0 }]]
+    },
+    "Health n8n": {
+      "ai_tool": [[{ "node": "Agente DevOps", "type": "ai_tool", "index": 0 }]]
+    },
+    "Health Ollama": {
+      "ai_tool": [[{ "node": "Agente DevOps", "type": "ai_tool", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

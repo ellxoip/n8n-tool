@@ -1,0 +1,167 @@
+{
+  "name": "🤖 Agente Multi-Trabajador con Ollama",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Eres un asistente AI avanzado y multi-propósito. Tienes acceso a varias herramientas que puedes usar para ayudar al usuario:\n\n1. **Ejecutar Código**: Puedes ejecutar código JavaScript para realizar cálculos, transformar datos, o resolver problemas de programación.\n2. **Solicitudes HTTP**: Puedes hacer peticiones a APIs externas o locales para obtener información.\n3. **Wikipedia**: Puedes buscar información en Wikipedia.\n\nSiempre responde de forma clara y estructurada. Si necesitas usar una herramienta, úsala sin preguntar. Si no estás seguro de algo, indícalo claramente.\n\nResponde en el idioma del usuario."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [620, 340],
+      "id": "agent-main",
+      "name": "AI Agent Principal"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [360, 340],
+      "id": "chat-trigger",
+      "name": "Chat Trigger",
+      "webhookId": "agente-multi-trabajador"
+    },
+    {
+      "parameters": {
+        "model": "mistral-small:latest",
+        "options": {
+          "temperature": 0.7,
+          "numCtx": 4096
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [480, 560],
+      "id": "ollama-chat-model",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "2ZvFCywyv1aOV0Ft",
+          "name": "Ollama IPv4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "cli-session",
+        "contextWindowLength": 15
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [620, 560],
+      "id": "memory-buffer",
+      "name": "Memoria de Ventana"
+    },
+    {
+      "parameters": {
+        "name": "ejecutar_codigo",
+        "description": "Ejecuta código JavaScript para realizar cálculos, transformar datos, generar texto, o resolver problemas de programación. Úsalo cuando necesites hacer operaciones matemáticas, manipular strings, procesar arrays o cualquier operación computacional.",
+        "language": "javaScript",
+        "jsCode": "// El código que el agente escriba se ejecutará aquí\n// Puede acceder a las variables de entrada con $input\nreturn { result: 'Código ejecutado correctamente' };"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.1,
+      "position": [760, 560],
+      "id": "tool-code",
+      "name": "Ejecutar Código JS"
+    },
+    {
+      "parameters": {
+        "name": "solicitud_http",
+        "description": "Realiza solicitudes HTTP a cualquier URL o API. Úsala para consultar APIs REST, obtener datos de servicios web, o interactuar con servicios locales. Puedes hacer peticiones GET, POST, PUT, DELETE.",
+        "method": "GET",
+        "url": "https://httpbin.org/get",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [900, 560],
+      "id": "tool-http",
+      "name": "Solicitud HTTP"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [1040, 560],
+      "id": "tool-wikipedia",
+      "name": "Wikipedia"
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Principal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Principal",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria de Ventana": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent Principal",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ejecutar Código JS": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent Principal",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Solicitud HTTP": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent Principal",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikipedia": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent Principal",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

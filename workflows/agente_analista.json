@@ -1,0 +1,167 @@
+{
+  "name": "🧠 Agente Analista (deepseek-r1)",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Eres un agente analista avanzado especializado en razonamiento profundo, lógica y resolución de problemas complejos.\n\nTu enfoque:\n1. Descomponer problemas difíciles en pasos lógicos manejables.\n2. Analizar datos, investigar hechos (usando Wikipedia o solicitudes HTTP) y realizar cálculos computacionales (usando JavaScript).\n3. Proveer conclusiones bien fundamentadas y estructuradas.\n\nTómate tu tiempo para 'pensar' y estructurar tus respuestas claramente."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [620, 340],
+      "id": "agent-analyst",
+      "name": "Agente Analista"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [360, 340],
+      "id": "chat-trigger-analyst",
+      "name": "Chat Trigger",
+      "webhookId": "agente-analista"
+    },
+    {
+      "parameters": {
+        "model": "deepseek-r1:14b",
+        "options": {
+          "temperature": 0.4,
+          "numCtx": 4096
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [480, 560],
+      "id": "ollama-r1-model",
+      "name": "DeepSeek R1 14B",
+      "credentials": {
+        "ollamaApi": {
+          "id": "2ZvFCywyv1aOV0Ft",
+          "name": "Ollama IPv4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "cli-session",
+        "contextWindowLength": 15
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [620, 560],
+      "id": "memory-analyst",
+      "name": "Memoria de Contexto"
+    },
+    {
+      "parameters": {
+        "name": "procesar_datos",
+        "description": "Ejecuta código JavaScript para procesar datos, hacer operaciones matemáticas complejas o parsear información.",
+        "language": "javaScript",
+        "jsCode": "return { result: 'Código ejecutado' };"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.1,
+      "position": [760, 560],
+      "id": "tool-code-analyst",
+      "name": "Procesar Datos JS"
+    },
+    {
+      "parameters": {
+        "name": "consultar_fuentes",
+        "description": "Realiza solicitudes HTTP GET para obtener datos en bruto de URLs específicas.",
+        "method": "GET",
+        "url": "https://httpbin.org/get",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [900, 560],
+      "id": "tool-http-analyst",
+      "name": "Consultar Fuentes"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [1040, 560],
+      "id": "tool-wiki-analyst",
+      "name": "Wikipedia"
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "Agente Analista",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek R1 14B": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Analista",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria de Contexto": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente Analista",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar Datos JS": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Analista",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Fuentes": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Analista",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikipedia": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Analista",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

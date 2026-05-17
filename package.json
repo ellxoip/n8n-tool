@@ -1,0 +1,30 @@
+{
+  "name": "n8n-ai-team",
+  "version": "1.0.0",
+  "description": "Entorno local profesional para n8n con agentes IA, Ollama y CLI",
+  "main": "ai-team.js",
+  "bin": {
+    "n8n-team": "./ai-team.js"
+  },
+  "scripts": {
+    "start": "node scripts/start-n8n.js",
+    "n8n": "node scripts/start-n8n.js",
+    "team": "node ai-team.js",
+    "team:status": "node ai-team.js --status",
+    "team:doctor": "node ai-team.js --doctor",
+    "team:test": "node ai-team.js --test",
+    "workflows:list": "node scripts/n8n-admin.js list",
+    "workflows:import": "node scripts/n8n-admin.js import",
+    "workflows:upsert": "node scripts/n8n-admin.js upsert",
+    "workflows:activate": "node scripts/n8n-admin.js activate",
+    "workflows:deactivate": "node scripts/n8n-admin.js deactivate",
+    "workflows:ensure-ollama": "node scripts/n8n-admin.js ensure-ollama",
+    "python:install": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/install-python.ps1"
+  },
+  "engines": {
+    "node": ">=22.16"
+  },
+  "dependencies": {
+    "n8n": "2.20.9"
+  }
+}

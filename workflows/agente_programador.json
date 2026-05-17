@@ -1,0 +1,148 @@
+{
+  "name": "💻 Agente Programador (qwen3-coder)",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Eres un programador experto senior. Tu especialidad es escribir código limpio, eficiente y bien documentado.\n\nTu flujo de trabajo:\n1. Analiza el problema del usuario\n2. Diseña la solución\n3. Escribe el código usando la herramienta de ejecución de código\n4. Verifica que funcione correctamente\n5. Explica la solución\n\nSiempre:\n- Escribe código modular y reutilizable\n- Incluye comentarios explicativos\n- Maneja errores apropiadamente\n- Sugiere mejoras cuando sea posible\n\nResponde en el idioma del usuario."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [620, 340],
+      "id": "agent-coder",
+      "name": "Agente Programador"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [360, 340],
+      "id": "chat-trigger-coder",
+      "name": "Chat Trigger",
+      "webhookId": "agente-programador"
+    },
+    {
+      "parameters": {
+        "model": "qwen3-coder:30b",
+        "options": {
+          "temperature": 0.3,
+          "numCtx": 8192
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [480, 560],
+      "id": "ollama-coder-model",
+      "name": "Qwen3 Coder 30B",
+      "credentials": {
+        "ollamaApi": {
+          "id": "2ZvFCywyv1aOV0Ft",
+          "name": "Ollama IPv4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "cli-session",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [620, 560],
+      "id": "memory-coder",
+      "name": "Memoria Coder"
+    },
+    {
+      "parameters": {
+        "name": "ejecutar_javascript",
+        "description": "Ejecuta código JavaScript. Usa esta herramienta para probar y ejecutar código que has escrito. Puedes hacer cualquier operación: cálculos, manipulación de strings, arrays, objetos, llamadas async, etc.",
+        "language": "javaScript",
+        "jsCode": "return { result: 'Código ejecutado' };"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.1,
+      "position": [760, 560],
+      "id": "tool-code-coder",
+      "name": "Ejecutar JavaScript"
+    },
+    {
+      "parameters": {
+        "name": "consultar_api",
+        "description": "Realiza solicitudes HTTP a APIs. Úsala para probar endpoints, obtener datos de APIs públicas, o interactuar con servicios. Soporta GET, POST, PUT, DELETE con headers y body personalizados.",
+        "method": "GET",
+        "url": "https://httpbin.org/get",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [900, 560],
+      "id": "tool-http-coder",
+      "name": "Consultar API"
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "Agente Programador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qwen3 Coder 30B": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Programador",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria Coder": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente Programador",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ejecutar JavaScript": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Programador",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar API": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Programador",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
