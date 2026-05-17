@@ -1,8 +1,8 @@
 $ErrorActionPreference = "Stop"
 
-$Version = "3.12.10"
-$InstallerMd5 = "5eddb0b6f12c852725de071ae681dde4"
-$RuntimeDir = Join-Path $PSScriptRoot "..\.runtime\python"
+$Version = "3.11.9"
+$InstallerMd5 = "e8dcd502e34932eebcaf1be056d5cbcd"
+$RuntimeDir = Join-Path $PSScriptRoot "..\.runtime\python311"
 $InstallerPath = Join-Path $env:TEMP "python-$Version-amd64.exe"
 $InstallerLog = Join-Path $env:TEMP "python-$Version-install.log"
 $Url = "https://www.python.org/ftp/python/$Version/python-$Version-amd64.exe"
@@ -28,7 +28,7 @@ if ($needsInstall) {
   }
 
   Write-Host "Installing Python into project runtime..."
-  $targetDir = Join-Path (Resolve-Path (Join-Path $PSScriptRoot '..')).Path ".runtime\python"
+  $targetDir = Join-Path (Resolve-Path (Join-Path $PSScriptRoot '..')).Path ".runtime\python311"
   $args = @(
     "/quiet",
     "/log",

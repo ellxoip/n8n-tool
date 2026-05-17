@@ -127,7 +127,7 @@ Valida:
 - Si n8n falla con `SQLITE_READONLY`, apunta `N8N_USER_FOLDER` a una carpeta limpia como `./.runtime/n8n`.
 - Los workflows actuales conservan referencia a credencial local de Ollama; si importas en otra maquina, crea la credencial de Ollama en n8n o ajusta el workflow.
 - `workflows:upsert` crea/reutiliza la credencial `Ollama Local` y actualiza los workflows antes de importarlos.
-- En este paquete npm de n8n no viene `@n8n/task-runner-python`; por eso `N8N_PYTHON_ENABLED=false` evita que n8n falle intentando iniciar un runner Python incompleto. El runner JS queda activo.
+- `python:install` instala Python 3.11 local en `.runtime/python311`. En este paquete npm de n8n no viene `@n8n/task-runner-python`; por eso `N8N_PYTHON_ENABLED=false` evita que n8n falle intentando iniciar un runner Python incompleto. El runner JS queda activo.
 - `team:doctor` puede fallar si n8n esta apagado; eso es esperado.
 
 ## Done operativo
