@@ -4,11 +4,13 @@
   "description": "Entorno local profesional para n8n con agentes IA, Ollama y CLI",
   "main": "ai-team.js",
   "bin": {
-    "n8n-team": "./ai-team.js"
+    "n8n-team": "./ai-team.js",
+    "n8n-tool": "./scripts/n8n-tool.js"
   },
   "scripts": {
     "start": "node scripts/start-n8n.js",
     "n8n": "node scripts/start-n8n.js",
+    "tool": "node scripts/n8n-tool.js",
     "team": "node ai-team.js",
     "team:status": "node ai-team.js --status",
     "team:doctor": "node ai-team.js --doctor",

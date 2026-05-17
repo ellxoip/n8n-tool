@@ -73,8 +73,32 @@ Desde cualquier carpeta:
 
 ```bat
 npm link
+n8n-tool --doctor
+n8n-tool "Construye un proyecto end to end"
 n8n-team --doctor
 n8n-team --agent 2 "Implementa la siguiente fase"
+```
+
+`n8n-tool` es el comando autonomo: levanta n8n si esta apagado, verifica Ollama, crea/reutiliza la credencial Ollama, importa/actualiza workflows, los activa y abre el equipo.
+
+Uso principal desde cualquier carpeta:
+
+```bat
+n8n-tool "Construye un proyecto end to end"
+n8n-tool --list
+n8n-tool --doctor
+```
+
+En PowerShell puede bloquearse el shim `.ps1`; usa:
+
+```bat
+n8n-tool.cmd "Construye un proyecto end to end"
+```
+
+Si solo quieres abrir sin sincronizar workflows:
+
+```bat
+n8n-tool --no-sync
 ```
 
 Si PowerShell bloquea el shim `.ps1`, usa:
