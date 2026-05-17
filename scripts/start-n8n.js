@@ -38,8 +38,9 @@ if (env.PYTHON_PATH) {
     ? env.PYTHON_PATH
     : path.resolve(root, env.PYTHON_PATH);
   const pythonDir = path.dirname(pythonPath);
+  const pathKey = Object.prototype.hasOwnProperty.call(env, 'Path') ? 'Path' : 'PATH';
   env.PYTHON_PATH = pythonPath;
-  env.PATH = `${pythonDir}${path.delimiter}${env.PATH || ''}`;
+  env[pathKey] = `${pythonDir}${path.delimiter}${env[pathKey] || ''}`;
 }
 
 console.log(`Starting n8n with N8N_USER_FOLDER=${env.N8N_USER_FOLDER}`);
