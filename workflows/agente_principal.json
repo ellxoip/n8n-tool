@@ -27,10 +27,10 @@
     },
     {
       "parameters": {
-        "model": "mistral-small:latest",
+        "model": "qwen3.5:4b",
         "options": {
           "temperature": 0.7,
-          "numCtx": 4096
+          "numCtx": 8192
         }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
@@ -72,17 +72,24 @@
     },
     {
       "parameters": {
-        "name": "solicitud_http",
-        "description": "Realiza solicitudes HTTP a cualquier URL o API. Úsala para consultar APIs REST, obtener datos de servicios web, o interactuar con servicios locales. Puedes hacer peticiones GET, POST, PUT, DELETE.",
+        "toolDescription": "Realiza una solicitud HTTP GET a una URL para consultar APIs REST o servicios locales.",
         "method": "GET",
-        "url": "https://httpbin.org/get",
-        "options": {}
+        "url": "{url}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "url",
+              "description": "URL completa (https://...) a consultar con GET",
+              "type": "string"
+            }
+          ]
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
+      "name": "solicitud_http",
       "position": [900, 560],
-      "id": "tool-http",
-      "name": "Solicitud HTTP"
+      "id": "tool-http"
     },
     {
       "parameters": {},
@@ -138,7 +145,7 @@
         ]
       ]
     },
-    "Solicitud HTTP": {
+    "Wikipedia": {
       "ai_tool": [
         [
           {
@@ -149,7 +156,7 @@
         ]
       ]
     },
-    "Wikipedia": {
+    "solicitud_http": {
       "ai_tool": [
         [
           {

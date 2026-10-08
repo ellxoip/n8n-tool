@@ -11,3 +11,7 @@ yarn-debug.log*
 yarn-error.log*
 .DS_Store
 Thumbs.db
+workspace/
+audio-*.mp3
+audio-*.wav
+audio-*.ogg

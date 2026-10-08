@@ -1,0 +1,155 @@
+{
+  "name": "👁️ OCR Vision Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ocr-vision",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "id": "ocr-webhook",
+      "name": "Webhook OCR",
+      "webhookId": "ocr-vision"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Acepta JSON {image_base64, mode, prompt} o multipart con un archivo de imagen.\nconst item = $input.first();\nconst body = item.json.body || {};\nlet image = body.image_base64 || body.image || null;\nif (image && image.includes(',')) image = image.split(',').pop(); // data URL -> base64\nif (!image && item.binary) {\n  const key = Object.keys(item.binary)[0];\n  if (key) image = (await this.helpers.getBinaryDataBuffer(0, key)).toString('base64');\n}\nif (!image) throw new Error('Falta la imagen: envia image_base64 (JSON) o un archivo multipart.');\n\nconst prompts = {\n  texto: 'Transcribe fielmente todo el texto visible en la imagen respetando el orden de lectura. Devuelve solo el texto, sin comentarios.',\n  documento: 'Extrae la informacion de este documento. Devuelve SOLO un JSON valido con las claves: tipo_documento (string), idioma (string), texto_completo (string), campos (objeto clave-valor con los datos detectados), tablas (arreglo de filas), fechas (arreglo de strings), montos (arreglo de strings). Usa null cuando algo no exista. No inventes datos.',\n  salud: 'Esta imagen es un documento clinico o administrativo de salud. Transcribe sin interpretar ni diagnosticar. Devuelve SOLO un JSON valido con las claves: tipo_documento, texto_completo, campos (paciente, rut, fecha, profesional, institucion, segun existan), medicamentos (arreglo de {nombre, dosis, frecuencia, duracion}), indicaciones (arreglo de strings), ilegible (arreglo con fragmentos que no pudiste leer). Usa null cuando algo no exista. No inventes datos.',\n};\nconst mode = prompts[body.mode] ? body.mode : 'documento';\nreturn [{ json: { image, mode, prompt: body.prompt || prompts[mode] } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "id": "ocr-prepare",
+      "name": "Preparar Imagen"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ocr-config-0",
+              "name": "model",
+              "value": "qwen3-vl:8b",
+              "type": "string"
+            },
+            {
+              "id": "ocr-config-1",
+              "name": "ollama_url",
+              "value": "http://127.0.0.1:11434",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [680, 300],
+      "id": "ocr-config",
+      "name": "Config Modelo"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.ollama_url }}/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: $json.model, stream: false, ...($json.mode === 'texto' ? {} : { format: 'json' }), options: { temperature: 0.1 }, messages: [{ role: 'user', content: $json.prompt, images: [$json.image] }] }) }}",
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300],
+      "id": "ocr-ollama",
+      "name": "Ollama Vision"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config Modelo').first().json;\nconst content = String(($json.message && $json.message.content) || '').replace(/<think>[\\s\\S]*?<\\/think>/g, '').trim();\nlet fields = null;\nif (cfg.mode !== 'texto') {\n  const cleaned = content.replace(/^```(?:json)?\\s*/i, '').replace(/```\\s*$/, '').trim();\n  try { fields = JSON.parse(cleaned); } catch (e) { fields = null; }\n}\nconst text = fields && typeof fields.texto_completo === 'string' ? fields.texto_completo : content;\nreturn [{ json: { ok: true, model: cfg.model, mode: cfg.mode, text, fields, raw: fields ? undefined : content } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300],
+      "id": "ocr-format",
+      "name": "Formatear Resultado"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1340, 300],
+      "id": "ocr-respond",
+      "name": "Responder"
+    }
+  ],
+  "connections": {
+    "Webhook OCR": {
+      "main": [
+        [
+          {
+            "node": "Preparar Imagen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Imagen": {
+      "main": [
+        [
+          {
+            "node": "Config Modelo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config Modelo": {
+      "main": [
+        [
+          {
+            "node": "Ollama Vision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Vision": {
+      "main": [
+        [
+          {
+            "node": "Formatear Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Resultado": {
+      "main": [
+        [
+          {
+            "node": "Responder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,395 @@
+{
+  "name": "🎙️ Agente de Voz (STT → LLM → TTS)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "voz-agente",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "id": "voz-webhook",
+      "name": "Webhook Voz",
+      "webhookId": "voz-agente"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "voz-config-0",
+              "name": "ollama_url",
+              "value": "http://127.0.0.1:11434",
+              "type": "string"
+            },
+            {
+              "id": "voz-config-1",
+              "name": "llm_model",
+              "value": "qwen3.5:4b",
+              "type": "string"
+            },
+            {
+              "id": "voz-config-2",
+              "name": "stt_url",
+              "value": "http://127.0.0.1:8000",
+              "type": "string"
+            },
+            {
+              "id": "voz-config-3",
+              "name": "stt_model",
+              "value": "Systran/faster-whisper-small",
+              "type": "string"
+            },
+            {
+              "id": "voz-config-4",
+              "name": "tts_url",
+              "value": "http://127.0.0.1:8880",
+              "type": "string"
+            },
+            {
+              "id": "voz-config-5",
+              "name": "tts_model",
+              "value": "kokoro",
+              "type": "string"
+            },
+            {
+              "id": "voz-config-6",
+              "name": "tts_voice",
+              "value": "ef_dora",
+              "type": "string"
+            },
+            {
+              "id": "voz-config-7",
+              "name": "tts_format",
+              "value": "mp3",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [400, 300],
+      "id": "voz-config",
+      "name": "Config Voz"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "voz-if-0",
+              "leftValue": "={{ ($json.body && $json.body.text) || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [600, 300],
+      "id": "voz-if",
+      "name": "Hay texto directo"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "voz-text-0",
+              "name": "transcript",
+              "value": "={{ $json.body.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [820, 200],
+      "id": "voz-text",
+      "name": "Texto Directo"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.stt_url }}/v1/audio/transcriptions",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "={{ Object.keys($binary)[0] }}"
+            },
+            {
+              "name": "model",
+              "value": "={{ $json.stt_model }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [820, 420],
+      "id": "voz-stt",
+      "name": "Transcribir Audio"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "voz-stt-text-0",
+              "name": "transcript",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1040, 420],
+      "id": "voz-stt-text",
+      "name": "Texto STT"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config Voz').first().json;\nconst transcript = String($json.transcript || '').trim();\nif (!transcript) throw new Error('No se obtuvo texto: envia {\"text\": \"...\"} o un archivo de audio.');\nconst payload = {\n  model: cfg.llm_model,\n  stream: false,\n  think: false,\n  options: { temperature: 0.4, num_ctx: 4096 },\n  messages: [\n    { role: 'system', content: 'Eres un asistente por voz del equipo n8n AI Team. Responde breve, natural y hablado: sin markdown, sin listas ni simbolos, maximo 4 frases, en el idioma del usuario.' },\n    { role: 'user', content: transcript },\n  ],\n};\nreturn [{ json: { transcript, payload, ollama_url: cfg.ollama_url } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1260, 300],
+      "id": "voz-chat-prepare",
+      "name": "Preparar Chat"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.ollama_url }}/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.payload) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1480, 300],
+      "id": "voz-llm",
+      "name": "Respuesta LLM"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config Voz').first().json;\nconst transcript = $('Preparar Chat').first().json.transcript;\nconst reply = String(($json.message && $json.message.content) || '').replace(/<think>[\\s\\S]*?<\\/think>/g, '').trim();\nif (!reply) throw new Error('El modelo no devolvio texto.');\nconst payload = { model: cfg.tts_model, input: reply.slice(0, 4000), voice: cfg.tts_voice, response_format: cfg.tts_format };\nreturn [{ json: { transcript, reply, tts_url: cfg.tts_url, payload } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1700, 300],
+      "id": "voz-reply",
+      "name": "Preparar Respuesta Hablada"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.tts_url }}/v1/audio/speech",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.payload) }}",
+        "options": {
+          "timeout": 300000,
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1920, 300],
+      "id": "voz-tts",
+      "name": "Sintetizar Respuesta"
+    },
+    {
+      "parameters": {
+        "respondWith": "binary",
+        "responseDataSource": "set",
+        "inputFieldName": "data",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "={{ $binary.data.mimeType || 'audio/mpeg' }}"
+              },
+              {
+                "name": "X-Transcripcion",
+                "value": "={{ encodeURIComponent($('Preparar Respuesta Hablada').first().json.transcript.slice(0, 500)) }}"
+              },
+              {
+                "name": "X-Respuesta",
+                "value": "={{ encodeURIComponent($('Preparar Respuesta Hablada').first().json.reply.slice(0, 500)) }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2140, 300],
+      "id": "voz-respond",
+      "name": "Responder Audio"
+    }
+  ],
+  "connections": {
+    "Webhook Voz": {
+      "main": [
+        [
+          {
+            "node": "Config Voz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config Voz": {
+      "main": [
+        [
+          {
+            "node": "Hay texto directo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay texto directo": {
+      "main": [
+        [
+          {
+            "node": "Texto Directo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Transcribir Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto Directo": {
+      "main": [
+        [
+          {
+            "node": "Preparar Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribir Audio": {
+      "main": [
+        [
+          {
+            "node": "Texto STT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto STT": {
+      "main": [
+        [
+          {
+            "node": "Preparar Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Chat": {
+      "main": [
+        [
+          {
+            "node": "Respuesta LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respuesta LLM": {
+      "main": [
+        [
+          {
+            "node": "Preparar Respuesta Hablada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Respuesta Hablada": {
+      "main": [
+        [
+          {
+            "node": "Sintetizar Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sintetizar Respuesta": {
+      "main": [
+        [
+          {
+            "node": "Responder Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

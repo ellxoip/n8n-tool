@@ -1,0 +1,162 @@
+{
+  "name": "🔊 Voz TTS (sintetizador)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "voz-tts",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "id": "tts-webhook",
+      "name": "Webhook TTS",
+      "webhookId": "voz-tts"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "tts-config-0",
+              "name": "tts_url",
+              "value": "http://127.0.0.1:8880",
+              "type": "string"
+            },
+            {
+              "id": "tts-config-1",
+              "name": "tts_model",
+              "value": "kokoro",
+              "type": "string"
+            },
+            {
+              "id": "tts-config-2",
+              "name": "tts_voice",
+              "value": "ef_dora",
+              "type": "string"
+            },
+            {
+              "id": "tts-config-3",
+              "name": "tts_format",
+              "value": "mp3",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300],
+      "id": "tts-config",
+      "name": "Config TTS"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $input.first().json;\nconst body = cfg.body || {};\nconst text = String(body.text || '').trim();\nif (!text) throw new Error('Falta \"text\".');\nif (text.length > 4000) throw new Error('Texto demasiado largo (max 4000 caracteres). Divide el texto en partes.');\n// \"extra\" permite pasar campos propios del servidor TTS (p. ej. audio de referencia para clonacion de voz).\nconst payload = Object.assign({\n  model: body.model || cfg.tts_model,\n  input: text,\n  voice: body.voice || cfg.tts_voice,\n  response_format: body.format || cfg.tts_format,\n  speed: Number(body.speed) || 1,\n}, body.extra || {});\nreturn [{ json: { tts_url: cfg.tts_url, payload } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "id": "tts-prepare",
+      "name": "Preparar Voz"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.tts_url }}/v1/audio/speech",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.payload) }}",
+        "options": {
+          "timeout": 300000,
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300],
+      "id": "tts-request",
+      "name": "Sintetizar Voz"
+    },
+    {
+      "parameters": {
+        "respondWith": "binary",
+        "responseDataSource": "set",
+        "inputFieldName": "data",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "={{ $binary.data.mimeType || 'audio/mpeg' }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1120, 300],
+      "id": "tts-respond",
+      "name": "Responder Audio"
+    }
+  ],
+  "connections": {
+    "Webhook TTS": {
+      "main": [
+        [
+          {
+            "node": "Config TTS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config TTS": {
+      "main": [
+        [
+          {
+            "node": "Preparar Voz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Voz": {
+      "main": [
+        [
+          {
+            "node": "Sintetizar Voz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sintetizar Voz": {
+      "main": [
+        [
+          {
+            "node": "Responder Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

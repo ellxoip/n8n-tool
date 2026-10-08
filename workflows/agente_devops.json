@@ -4,7 +4,7 @@
     {
       "parameters": {
         "options": {
-          "systemMessage": "Eres el agente DevOps y Runtime del equipo n8n AI Team. Tu trabajo es validar instalacion, variables de entorno, comandos, logs, health checks, conectividad local, n8n, Ollama, modelos, webhooks, importacion y activacion de workflows. Responde con pasos verificables, comandos para Windows y riesgos concretos. No pidas secretos; indica que deben ir en .env o vault."
+          "systemMessage": "Eres el agente DevOps y Runtime del equipo n8n AI Team. Validas instalacion, variables de entorno, comandos, logs, health checks, conectividad local, n8n, Ollama, modelos, webhooks, Qdrant, TTS/STT, el bridge local, e importacion y activacion de workflows.\n\nHerramientas: health_n8n, health_ollama, health_bridge, diagnostico_runtime.\nResponde con pasos verificables, comandos para Windows (CMD/PowerShell) y riesgos concretos. Para diagnostico completo recomienda `n8n-tool --doctor`. No pidas secretos: deben ir en .env o vault."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -27,7 +27,7 @@
     },
     {
       "parameters": {
-        "model": "mistral-small:latest",
+        "model": "qwen3.5:4b",
         "options": {
           "temperature": 0.2,
           "numCtx": 8192
@@ -37,7 +37,7 @@
       "typeVersion": 1,
       "position": [480, 560],
       "id": "ollama-devops-model",
-      "name": "Mistral Small DevOps",
+      "name": "Modelo DevOps",
       "credentials": {
         "ollamaApi": {
           "id": "2ZvFCywyv1aOV0Ft",
@@ -72,51 +72,118 @@
     },
     {
       "parameters": {
-        "name": "health_n8n",
-        "description": "Consulta healthz de n8n local.",
+        "toolDescription": "Consulta /healthz de n8n local.",
         "method": "GET",
-        "url": "http://localhost:5678/healthz",
-        "options": {}
+        "url": "http://localhost:5678/healthz"
       },
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
+      "name": "health_n8n",
       "position": [900, 560],
-      "id": "tool-http-devops-n8n",
-      "name": "Health n8n"
+      "id": "tool-http-devops-n8n"
     },
     {
       "parameters": {
-        "name": "health_ollama",
-        "description": "Consulta modelos disponibles en Ollama local.",
+        "toolDescription": "Lista los modelos instalados en Ollama local.",
         "method": "GET",
-        "url": "http://localhost:11434/api/tags",
-        "options": {}
+        "url": "http://127.0.0.1:11434/api/tags"
       },
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
+      "name": "health_ollama",
       "position": [1040, 560],
-      "id": "tool-http-devops-ollama",
-      "name": "Health Ollama"
+      "id": "tool-http-devops-ollama"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Consulta /health del bridge local (terminal coder y memoria).",
+        "method": "GET",
+        "url": "http://127.0.0.1:8787/health"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "name": "health_bridge",
+      "position": [1180, 560],
+      "id": "tool-health_bridge"
     }
   ],
   "connections": {
     "Chat Trigger": {
-      "main": [[{ "node": "Agente DevOps", "type": "main", "index": 0 }]]
-    },
-    "Mistral Small DevOps": {
-      "ai_languageModel": [[{ "node": "Agente DevOps", "type": "ai_languageModel", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Agente DevOps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Memoria Runtime": {
-      "ai_memory": [[{ "node": "Agente DevOps", "type": "ai_memory", "index": 0 }]]
+      "ai_memory": [
+        [
+          {
+            "node": "Agente DevOps",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Diagnostico Runtime": {
-      "ai_tool": [[{ "node": "Agente DevOps", "type": "ai_tool", "index": 0 }]]
+      "ai_tool": [
+        [
+          {
+            "node": "Agente DevOps",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
     },
-    "Health n8n": {
-      "ai_tool": [[{ "node": "Agente DevOps", "type": "ai_tool", "index": 0 }]]
+    "Modelo DevOps": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente DevOps",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
     },
-    "Health Ollama": {
-      "ai_tool": [[{ "node": "Agente DevOps", "type": "ai_tool", "index": 0 }]]
+    "health_n8n": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente DevOps",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "health_ollama": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente DevOps",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "health_bridge": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente DevOps",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {

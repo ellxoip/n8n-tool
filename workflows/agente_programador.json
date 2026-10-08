@@ -1,10 +1,10 @@
 {
-  "name": "💻 Agente Programador (qwen3-coder)",
+  "name": "💻 Agente Programador",
   "nodes": [
     {
       "parameters": {
         "options": {
-          "systemMessage": "Eres un programador experto senior. Tu especialidad es escribir código limpio, eficiente y bien documentado.\n\nTu flujo de trabajo:\n1. Analiza el problema del usuario\n2. Diseña la solución\n3. Escribe el código usando la herramienta de ejecución de código\n4. Verifica que funcione correctamente\n5. Explica la solución\n\nSiempre:\n- Escribe código modular y reutilizable\n- Incluye comentarios explicativos\n- Maneja errores apropiadamente\n- Sugiere mejoras cuando sea posible\n\nResponde en el idioma del usuario."
+          "systemMessage": "Eres el Programador senior del equipo. Escribes codigo limpio, simple, mantenible y probado.\n\nFlujo:\n1. Usa buscar_memoria para respetar convenciones y decisiones previas.\n2. Entiende el problema y diseña la solucion minima que funcione.\n3. Escribe el codigo completo, modular, con manejo de errores y pruebas cuando aplique.\n4. Si la tarea requiere tocar archivos reales de un repositorio, indica que debe hacerse con el Terminal Coder; no finjas haber ejecutado nada.\n5. Explica que hiciste y como verificarlo.\n\nNunca incluyas secretos en el codigo; usa variables de entorno.\n\nMemoria compartida: usa buscar_memoria antes de empezar para reutilizar decisiones y documentacion previas; al cerrar una tarea con conclusiones duraderas usa guardar_memoria (texto autocontenido, sin secretos ni datos personales).\n\nResponde en el idioma del usuario."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -27,17 +27,17 @@
     },
     {
       "parameters": {
-        "model": "qwen3-coder:30b",
+        "model": "qwen3-coder-next:latest",
         "options": {
           "temperature": 0.3,
-          "numCtx": 8192
+          "numCtx": 16384
         }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [480, 560],
       "id": "ollama-coder-model",
-      "name": "Qwen3 Coder 30B",
+      "name": "Modelo Programador",
       "credentials": {
         "ollamaApi": {
           "id": "2ZvFCywyv1aOV0Ft",
@@ -72,17 +72,112 @@
     },
     {
       "parameters": {
-        "name": "consultar_api",
-        "description": "Realiza solicitudes HTTP a APIs. Úsala para probar endpoints, obtener datos de APIs públicas, o interactuar con servicios. Soporta GET, POST, PUT, DELETE con headers y body personalizados.",
+        "toolDescription": "Realiza una solicitud HTTP GET a una URL para probar endpoints o leer documentacion de APIs.",
         "method": "GET",
-        "url": "https://httpbin.org/get",
-        "options": {}
+        "url": "{url}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "url",
+              "description": "URL completa (https://...) a consultar con GET",
+              "type": "string"
+            }
+          ]
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
+      "name": "consultar_api",
       "position": [900, 560],
-      "id": "tool-http-coder",
-      "name": "Consultar API"
+      "id": "tool-http-coder"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Busca en la memoria compartida del equipo (documentacion del proyecto, decisiones del Analista, aprendizajes de QA, workflows previos). Usala ANTES de analizar o programar para reutilizar contexto. Devuelve fragmentos con su fuente y puntaje.",
+        "method": "POST",
+        "url": "http://127.0.0.1:8787/memory/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "parametersBody": {
+          "values": [
+            {
+              "name": "query",
+              "valueProvider": "modelRequired"
+            },
+            {
+              "name": "limit",
+              "valueProvider": "fieldValue",
+              "value": "5"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "query",
+              "description": "Pregunta o tema a buscar, en lenguaje natural",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "name": "buscar_memoria",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "BRIDGE_TOKEN",
+          "name": "Bridge Token"
+        }
+      },
+      "position": [1040, 560],
+      "id": "tool-buscar_memoria"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Guarda en la memoria compartida del equipo una decision, conclusion o aprendizaje duradero (texto autocontenido, sin secretos ni datos personales). Usala al cerrar una tarea importante.",
+        "method": "POST",
+        "url": "http://127.0.0.1:8787/memory/ingest",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "parametersBody": {
+          "values": [
+            {
+              "name": "text",
+              "valueProvider": "modelRequired"
+            },
+            {
+              "name": "source",
+              "valueProvider": "fieldValue",
+              "value": "programador"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "text",
+              "description": "Texto autocontenido a recordar (decision, hallazgo o aprendizaje)",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "name": "guardar_memoria",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "BRIDGE_TOKEN",
+          "name": "Bridge Token"
+        }
+      },
+      "position": [1180, 560],
+      "id": "tool-guardar_memoria"
     }
   ],
   "connections": {
@@ -92,17 +187,6 @@
           {
             "node": "Agente Programador",
             "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Qwen3 Coder 30B": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Agente Programador",
-            "type": "ai_languageModel",
             "index": 0
           }
         ]
@@ -130,7 +214,40 @@
         ]
       ]
     },
-    "Consultar API": {
+    "Modelo Programador": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Programador",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "consultar_api": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Programador",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar_memoria": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Programador",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "guardar_memoria": {
       "ai_tool": [
         [
           {

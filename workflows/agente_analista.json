@@ -1,10 +1,10 @@
 {
-  "name": "🧠 Agente Analista (deepseek-r1)",
+  "name": "🧠 Agente Analista",
   "nodes": [
     {
       "parameters": {
         "options": {
-          "systemMessage": "Eres un agente analista avanzado especializado en razonamiento profundo, lógica y resolución de problemas complejos.\n\nTu enfoque:\n1. Descomponer problemas difíciles en pasos lógicos manejables.\n2. Analizar datos, investigar hechos (usando Wikipedia o solicitudes HTTP) y realizar cálculos computacionales (usando JavaScript).\n3. Proveer conclusiones bien fundamentadas y estructuradas.\n\nTómate tu tiempo para 'pensar' y estructurar tus respuestas claramente."
+          "systemMessage": "Eres el Analista del equipo: razonamiento profundo, requisitos, arquitectura y riesgos.\n\nTu enfoque:\n1. Descompon el problema en pasos logicos verificables.\n2. Levanta requisitos funcionales y no funcionales, supuestos, riesgos y criterios de aceptacion medibles.\n3. Investiga hechos con Wikipedia, consultar_fuentes (HTTP GET) o procesar_datos (calculos).\n4. Entrega conclusiones estructuradas: resumen, opciones con trade-offs, recomendacion y siguiente paso concreto.\n\nNo inventes datos: si falta informacion, dilo y propone una decision conservadora.\n\nMemoria compartida: usa buscar_memoria antes de empezar para reutilizar decisiones y documentacion previas; al cerrar una tarea con conclusiones duraderas usa guardar_memoria (texto autocontenido, sin secretos ni datos personales).\n\nResponde en el idioma del usuario."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -27,17 +27,17 @@
     },
     {
       "parameters": {
-        "model": "deepseek-r1:14b",
+        "model": "qwen3.5:35b-a3b",
         "options": {
           "temperature": 0.4,
-          "numCtx": 4096
+          "numCtx": 16384
         }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [480, 560],
       "id": "ollama-r1-model",
-      "name": "DeepSeek R1 14B",
+      "name": "Modelo Analista",
       "credentials": {
         "ollamaApi": {
           "id": "2ZvFCywyv1aOV0Ft",
@@ -72,17 +72,24 @@
     },
     {
       "parameters": {
-        "name": "consultar_fuentes",
-        "description": "Realiza solicitudes HTTP GET para obtener datos en bruto de URLs específicas.",
+        "toolDescription": "Realiza una solicitud HTTP GET a una URL para obtener datos en bruto (paginas, APIs publicas, documentacion).",
         "method": "GET",
-        "url": "https://httpbin.org/get",
-        "options": {}
+        "url": "{url}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "url",
+              "description": "URL completa (https://...) a consultar con GET",
+              "type": "string"
+            }
+          ]
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
+      "name": "consultar_fuentes",
       "position": [900, 560],
-      "id": "tool-http-analyst",
-      "name": "Consultar Fuentes"
+      "id": "tool-http-analyst"
     },
     {
       "parameters": {},
@@ -91,6 +98,94 @@
       "position": [1040, 560],
       "id": "tool-wiki-analyst",
       "name": "Wikipedia"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Busca en la memoria compartida del equipo (documentacion del proyecto, decisiones del Analista, aprendizajes de QA, workflows previos). Usala ANTES de analizar o programar para reutilizar contexto. Devuelve fragmentos con su fuente y puntaje.",
+        "method": "POST",
+        "url": "http://127.0.0.1:8787/memory/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "parametersBody": {
+          "values": [
+            {
+              "name": "query",
+              "valueProvider": "modelRequired"
+            },
+            {
+              "name": "limit",
+              "valueProvider": "fieldValue",
+              "value": "5"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "query",
+              "description": "Pregunta o tema a buscar, en lenguaje natural",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "name": "buscar_memoria",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "BRIDGE_TOKEN",
+          "name": "Bridge Token"
+        }
+      },
+      "position": [1180, 560],
+      "id": "tool-buscar_memoria"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Guarda en la memoria compartida del equipo una decision, conclusion o aprendizaje duradero (texto autocontenido, sin secretos ni datos personales). Usala al cerrar una tarea importante.",
+        "method": "POST",
+        "url": "http://127.0.0.1:8787/memory/ingest",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "parametersBody": {
+          "values": [
+            {
+              "name": "text",
+              "valueProvider": "modelRequired"
+            },
+            {
+              "name": "source",
+              "valueProvider": "fieldValue",
+              "value": "analista"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "text",
+              "description": "Texto autocontenido a recordar (decision, hallazgo o aprendizaje)",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "name": "guardar_memoria",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "BRIDGE_TOKEN",
+          "name": "Bridge Token"
+        }
+      },
+      "position": [1320, 560],
+      "id": "tool-guardar_memoria"
     }
   ],
   "connections": {
@@ -100,17 +195,6 @@
           {
             "node": "Agente Analista",
             "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "DeepSeek R1 14B": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Agente Analista",
-            "type": "ai_languageModel",
             "index": 0
           }
         ]
@@ -138,7 +222,7 @@
         ]
       ]
     },
-    "Consultar Fuentes": {
+    "Wikipedia": {
       "ai_tool": [
         [
           {
@@ -149,7 +233,40 @@
         ]
       ]
     },
-    "Wikipedia": {
+    "Modelo Analista": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Analista",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "consultar_fuentes": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Analista",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar_memoria": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Analista",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "guardar_memoria": {
       "ai_tool": [
         [
           {

@@ -1,0 +1,19 @@
+# Copia este archivo a .github/workflows/ci.yml para ejecutar las pruebas en GitHub Actions.
+# (Se deja en docs/ porque el token usado para publicar no tenia permiso de "workflow".)
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Los tests no necesitan instalar n8n: usan solo modulos de Node.
+      - run: node --test "tests/*.test.js"
+      - run: node ai-team.js --help

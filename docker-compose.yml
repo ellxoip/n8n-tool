@@ -1,0 +1,31 @@
+# Servicios opcionales del equipo. n8n y Ollama siguen corriendo en el host.
+#
+#   docker compose up -d qdrant               memoria RAG (Qdrant)
+#   docker compose --profile voice up -d      + TTS (Kokoro, CPU) + STT (Whisper, CPU)
+#
+# Las imagenes de voz se pueden cambiar con TTS_IMAGE / STT_IMAGE. Fija versiones
+# concretas (en vez de "latest") cuando lo uses en produccion.
+services:
+  qdrant:
+    image: qdrant/qdrant:${QDRANT_VERSION:-v1.12.4}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6333:6333"
+    volumes:
+      - ./.runtime/qdrant:/qdrant/storage
+
+  tts:
+    profiles: ["voice"]
+    image: ${TTS_IMAGE:-ghcr.io/remsky/kokoro-fastapi-cpu:latest}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8880:8880"
+
+  stt:
+    profiles: ["voice"]
+    image: ${STT_IMAGE:-ghcr.io/speaches-ai/speaches:latest-cpu}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./.runtime/hf-cache:/home/ubuntu/.cache/huggingface/hub

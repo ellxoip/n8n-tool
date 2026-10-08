@@ -1,0 +1,231 @@
+{
+  "name": "⌨️ Agente Terminal Coder",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Eres el Terminal Coder del equipo: conviertes tareas de implementacion en cambios reales sobre un repositorio usando un agente de programacion por terminal (Aider u OpenCode) contra los modelos locales de Ollama.\n\nHerramienta: ejecutar_tarea_terminal.\nReglas:\n1. Antes de ejecutar, usa buscar_memoria para conocer convenciones del proyecto.\n2. Divide el pedido en tareas pequenas y precisas (una responsabilidad por llamada); describe archivos, comportamiento esperado y criterios de aceptacion en \"task\".\n3. Pasa \"workspace\" (subcarpeta del workspace seguro) cuando el pedido nombre un proyecto; pasa \"test\" (por ejemplo \"npm test\" o \"pytest -q\") para verificar automaticamente.\n4. Lee el resultado: si ok=false, timedOut=true o tests.passed=false, NO digas que funciono; resume el error y reintenta con una tarea mas acotada (maximo 2 reintentos).\n5. Al terminar entrega: resumen de cambios (changes.status y changes.stat), resultado de tests y los riesgos pendientes, para que el Revisor QA pueda auditar el diff.\n\nNunca pidas ni escribas secretos. Responde en el idioma del usuario."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [620, 340],
+      "id": "agent-terminal",
+      "name": "Agente Terminal Coder"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [360, 340],
+      "id": "chat-trigger-terminal",
+      "name": "Chat Trigger",
+      "webhookId": "agente-terminal-coder"
+    },
+    {
+      "parameters": {
+        "model": "qwen3-coder-next:latest",
+        "options": {
+          "temperature": 0.2,
+          "numCtx": 16384
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [480, 560],
+      "id": "ollama-terminal",
+      "name": "Modelo Terminal Coder",
+      "credentials": {
+        "ollamaApi": {
+          "id": "2ZvFCywyv1aOV0Ft",
+          "name": "Ollama IPv4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "terminal-session",
+        "contextWindowLength": 15
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [620, 560],
+      "id": "memory-terminal",
+      "name": "Memoria Terminal"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Ejecuta una tarea de programacion real con Aider u OpenCode dentro del workspace seguro y opcionalmente corre un test. Devuelve JSON con ok, output, changes.status/stat/diff (cambios hechos) y tests.passed.",
+        "method": "POST",
+        "url": "http://127.0.0.1:8787/terminal/run",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "parametersBody": {
+          "values": [
+            {
+              "name": "task",
+              "valueProvider": "modelRequired"
+            },
+            {
+              "name": "engine",
+              "valueProvider": "modelOptional"
+            },
+            {
+              "name": "workspace",
+              "valueProvider": "modelOptional"
+            },
+            {
+              "name": "test",
+              "valueProvider": "modelOptional"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "task",
+              "description": "Instruccion detallada y autocontenida de lo que hay que implementar o corregir, con archivos y criterios de aceptacion",
+              "type": "string"
+            },
+            {
+              "name": "engine",
+              "description": "Motor: \"aider\" (por defecto, hace git commits) u \"opencode\"",
+              "type": "string"
+            },
+            {
+              "name": "workspace",
+              "description": "Subcarpeta del workspace seguro donde trabajar (ej. \"mi-proyecto\"); se crea si no existe",
+              "type": "string"
+            },
+            {
+              "name": "test",
+              "description": "Comando de test permitido a ejecutar despues (ej. \"npm test\", \"pytest -q\"); omitir si no hay tests",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "name": "ejecutar_tarea_terminal",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "BRIDGE_TOKEN",
+          "name": "Bridge Token"
+        }
+      },
+      "position": [760, 560],
+      "id": "tool-ejecutar_tarea_terminal"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Busca en la memoria compartida del equipo (documentacion del proyecto, decisiones del Analista, aprendizajes de QA, workflows previos). Usala ANTES de analizar o programar para reutilizar contexto. Devuelve fragmentos con su fuente y puntaje.",
+        "method": "POST",
+        "url": "http://127.0.0.1:8787/memory/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "parametersBody": {
+          "values": [
+            {
+              "name": "query",
+              "valueProvider": "modelRequired"
+            },
+            {
+              "name": "limit",
+              "valueProvider": "fieldValue",
+              "value": "5"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "query",
+              "description": "Pregunta o tema a buscar, en lenguaje natural",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "name": "buscar_memoria",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "BRIDGE_TOKEN",
+          "name": "Bridge Token"
+        }
+      },
+      "position": [900, 560],
+      "id": "tool-buscar_memoria"
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "Agente Terminal Coder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo Terminal Coder": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Terminal Coder",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria Terminal": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente Terminal Coder",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ejecutar_tarea_terminal": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Terminal Coder",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar_memoria": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Terminal Coder",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

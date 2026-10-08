@@ -91,7 +91,7 @@ Para este proyecto n8n AI Team:
 - Mantener n8n como orquestador visual.
 - Mantener Ollama como runtime local de modelos.
 - Mantener CLI `n8n-team` para uso desde cualquier carpeta.
-- Separar supervisor, analista, programador, revisor y DevOps.
+- Separar supervisor, analista, programador, revisor, DevOps y Terminal Coder (edicion real de archivos via bridge local).
 - Mejorar progresivamente workflows, seguridad, logs, health checks, import/update automatizado y documentacion.
 ```
 

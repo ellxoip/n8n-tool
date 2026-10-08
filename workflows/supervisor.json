@@ -4,7 +4,7 @@
     {
       "parameters": {
         "options": {
-          "systemMessage": "Eres el Supervisor Maestro de un equipo de Agentes de IA.\n\nTu objetivo es orquestar y delegar tareas a tu equipo de especialistas cuando sea necesario. No tienes que hacerlo todo tú mismo.\n\nTus especialistas son:\n1. delegar_programador: Especialista en escribir código nuevo desde cero.\n2. delegar_analista: Especialista en investigar, razonar y hacer análisis de datos (DeepSeek R1).\n3. delegar_revisor: Especialista en auditar, optimizar y encontrar errores en código existente.\n\nFlujo de Trabajo:\n1. Analiza lo que el usuario pide.\n2. Si es una tarea compleja, divídela en pasos.\n3. Llama a las herramientas (tus agentes) pasándoles instrucciones claras de lo que deben hacer.\n4. Si los agentes devuelven JSON, lee el campo 'output' para entender su respuesta.\n5. Junta las respuestas de tus agentes y presenta el resultado final al usuario de forma clara."
+          "systemMessage": "Eres el Supervisor Maestro de un equipo local de agentes de IA. Orquestas: no hagas tu todo lo que un especialista hace mejor. Se rapido y preciso al decidir el ruteo.\n\nHerramientas (tu equipo):\n- delegar_analista: requisitos, arquitectura, investigacion, riesgos, razonamiento complejo.\n- delegar_programador: diseño y codigo en la conversacion (fragmentos, algoritmos, explicaciones).\n- delegar_terminal_coder: implementar cambios REALES en un repositorio/archivos, correr tests (Aider/OpenCode).\n- delegar_revisor: auditar codigo o diffs (QA, seguridad, regresiones).\n- delegar_devops: instalacion, logs, health checks, n8n, Ollama, servicios.\n- buscar_memoria: memoria compartida del proyecto (RAG). Consultala primero en tareas de proyecto.\n\nFlujo end to end para \"construye / implementa X\":\n1. buscar_memoria con el tema.\n2. delegar_analista: requisitos y criterios de aceptacion.\n3. delegar_terminal_coder: implementar con \"test\" cuando haya suite de pruebas.\n4. delegar_revisor: pasale el resumen de cambios y diff que devolvio el Terminal Coder.\n5. Si QA rechaza, vuelve al paso 3 con los hallazgos. No termines hasta tener una salida usable o un bloqueo concreto.\n\nReglas de delegacion: cada llamada debe ser autocontenida (el especialista no ve esta conversacion). Las respuestas de los agentes llegan como JSON; lee el campo \"output\".\n\nPlaybooks por dominio:\n- Videojuegos (Godot): GDScript tipado, escenas pequenas, un sistema por tarea; verificacion headless (godot --headless).\n- Salud: datos clinicos son sensibles. Todo se procesa localmente, nunca se envian a servicios externos. Cita siempre la fuente de memoria usada, no emitas diagnosticos, marca claramente lo que requiere validacion profesional.\n- zelix.cl: mejora continua: auditar sitio (SEO/UX/rendimiento) con el Analista, priorizar, implementar con el Terminal Coder, verificar con QA.\n\nPresenta al usuario un resultado final claro: que se hizo, como verificarlo, riesgos y siguiente paso. Responde en el idioma del usuario."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -27,17 +27,17 @@
     },
     {
       "parameters": {
-        "model": "mistral-small:latest",
+        "model": "qwen3.5:4b",
         "options": {
           "temperature": 0.2,
-          "numCtx": 4096
+          "numCtx": 8192
         }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [480, 560],
       "id": "ollama-supervisor",
-      "name": "Modelo de Enrutamiento",
+      "name": "Modelo Supervisor",
       "credentials": {
         "ollamaApi": {
           "id": "2ZvFCywyv1aOV0Ft",
@@ -59,96 +59,252 @@
     },
     {
       "parameters": {
-        "name": "delegar_programador",
-        "description": "Pide al Agente Programador que escriba código. Pásale como 'query' una instrucción súper clara de qué código debe crear.",
-        "method": "POST",
-        "url": "http://127.0.0.1:5678/webhook/agente-programador/chat",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "action",
-              "value": "sendMessage"
-            },
-            {
-              "name": "sessionId",
-              "value": "supervisor-delegation"
-            },
-            {
-              "name": "chatInput",
-              "value": "={{$parameter.query}}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
-      "typeVersion": 1.1,
-      "position": [760, 560],
-      "id": "tool-programmer",
-      "name": "Llamar Programador"
-    },
-    {
-      "parameters": {
-        "name": "delegar_analista",
-        "description": "Pide al Agente Analista que resuelva un problema lógico complejo o haga research. Pásale como 'query' el contexto y problema a analizar.",
+        "toolDescription": "Delega al Analista: requisitos, arquitectura, investigacion, riesgos y razonamiento complejo. Pasa el contexto completo y el problema a analizar.",
         "method": "POST",
         "url": "http://127.0.0.1:5678/webhook/agente-analista/chat",
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
+        "specifyBody": "keypair",
+        "parametersBody": {
+          "values": [
             {
               "name": "action",
+              "valueProvider": "fieldValue",
               "value": "sendMessage"
             },
             {
               "name": "sessionId",
+              "valueProvider": "fieldValue",
               "value": "supervisor-delegation"
             },
             {
               "name": "chatInput",
-              "value": "={{$parameter.query}}"
+              "valueProvider": "modelRequired"
             }
           ]
         },
-        "options": {}
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "chatInput",
+              "description": "Instruccion completa y autocontenida para el agente, con todo el contexto necesario",
+              "type": "string"
+            }
+          ]
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
-      "position": [900, 560],
-      "id": "tool-analyst",
-      "name": "Llamar Analista"
+      "name": "delegar_analista",
+      "position": [760, 560],
+      "id": "tool-delegar_analista"
     },
     {
       "parameters": {
-        "name": "delegar_revisor",
-        "description": "Pide al Agente Revisor que audite, mejore o debuggee un código. Pásale como 'query' el código y lo que quieres que revise.",
+        "toolDescription": "Delega al Programador: diseño y escritura de codigo en la conversacion (fragmentos, algoritmos). Pasa una instruccion muy clara de que codigo crear.",
         "method": "POST",
-        "url": "http://127.0.0.1:5678/webhook/agente-revisor/chat",
+        "url": "http://127.0.0.1:5678/webhook/agente-programador/chat",
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
+        "specifyBody": "keypair",
+        "parametersBody": {
+          "values": [
             {
               "name": "action",
+              "valueProvider": "fieldValue",
               "value": "sendMessage"
             },
             {
               "name": "sessionId",
+              "valueProvider": "fieldValue",
               "value": "supervisor-delegation"
             },
             {
               "name": "chatInput",
-              "value": "={{$parameter.query}}"
+              "valueProvider": "modelRequired"
             }
           ]
         },
-        "options": {}
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "chatInput",
+              "description": "Instruccion completa y autocontenida para el agente, con todo el contexto necesario",
+              "type": "string"
+            }
+          ]
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
+      "name": "delegar_programador",
+      "position": [900, 560],
+      "id": "tool-delegar_programador"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Delega al Terminal Coder: implementar cambios reales en archivos de un repositorio y ejecutar tests con Aider/OpenCode. Indica proyecto/workspace, archivos, comportamiento esperado y que test correr.",
+        "method": "POST",
+        "url": "http://127.0.0.1:5678/webhook/agente-terminal-coder/chat",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "parametersBody": {
+          "values": [
+            {
+              "name": "action",
+              "valueProvider": "fieldValue",
+              "value": "sendMessage"
+            },
+            {
+              "name": "sessionId",
+              "valueProvider": "fieldValue",
+              "value": "supervisor-delegation"
+            },
+            {
+              "name": "chatInput",
+              "valueProvider": "modelRequired"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "chatInput",
+              "description": "Instruccion completa y autocontenida para el agente, con todo el contexto necesario",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "name": "delegar_terminal_coder",
       "position": [1040, 560],
-      "id": "tool-reviewer",
-      "name": "Llamar Revisor"
+      "id": "tool-delegar_terminal_coder"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Delega al Revisor QA: auditar codigo o diffs (bugs, seguridad, regresiones). Pasa el codigo o diff completo y que debe revisar.",
+        "method": "POST",
+        "url": "http://127.0.0.1:5678/webhook/agente-revisor/chat",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "parametersBody": {
+          "values": [
+            {
+              "name": "action",
+              "valueProvider": "fieldValue",
+              "value": "sendMessage"
+            },
+            {
+              "name": "sessionId",
+              "valueProvider": "fieldValue",
+              "value": "supervisor-delegation"
+            },
+            {
+              "name": "chatInput",
+              "valueProvider": "modelRequired"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "chatInput",
+              "description": "Instruccion completa y autocontenida para el agente, con todo el contexto necesario",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "name": "delegar_revisor",
+      "position": [1180, 560],
+      "id": "tool-delegar_revisor"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Delega a DevOps: instalacion, logs, health checks, n8n, Ollama y servicios locales.",
+        "method": "POST",
+        "url": "http://127.0.0.1:5678/webhook/agente-devops/chat",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "parametersBody": {
+          "values": [
+            {
+              "name": "action",
+              "valueProvider": "fieldValue",
+              "value": "sendMessage"
+            },
+            {
+              "name": "sessionId",
+              "valueProvider": "fieldValue",
+              "value": "supervisor-delegation"
+            },
+            {
+              "name": "chatInput",
+              "valueProvider": "modelRequired"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "chatInput",
+              "description": "Instruccion completa y autocontenida para el agente, con todo el contexto necesario",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "name": "delegar_devops",
+      "position": [1320, 560],
+      "id": "tool-delegar_devops"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Busca en la memoria compartida del equipo (documentacion del proyecto, decisiones del Analista, aprendizajes de QA, workflows previos). Usala ANTES de analizar o programar para reutilizar contexto. Devuelve fragmentos con su fuente y puntaje.",
+        "method": "POST",
+        "url": "http://127.0.0.1:8787/memory/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "parametersBody": {
+          "values": [
+            {
+              "name": "query",
+              "valueProvider": "modelRequired"
+            },
+            {
+              "name": "limit",
+              "valueProvider": "fieldValue",
+              "value": "5"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "query",
+              "description": "Pregunta o tema a buscar, en lenguaje natural",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "name": "buscar_memoria",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "BRIDGE_TOKEN",
+          "name": "Bridge Token"
+        }
+      },
+      "position": [1460, 560],
+      "id": "tool-buscar_memoria"
     }
   ],
   "connections": {
@@ -158,17 +314,6 @@
           {
             "node": "Supervisor Maestro",
             "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Modelo de Enrutamiento": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Supervisor Maestro",
-            "type": "ai_languageModel",
             "index": 0
           }
         ]
@@ -185,7 +330,18 @@
         ]
       ]
     },
-    "Llamar Programador": {
+    "Modelo Supervisor": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Supervisor Maestro",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "delegar_analista": {
       "ai_tool": [
         [
           {
@@ -196,7 +352,7 @@
         ]
       ]
     },
-    "Llamar Analista": {
+    "delegar_programador": {
       "ai_tool": [
         [
           {
@@ -207,7 +363,40 @@
         ]
       ]
     },
-    "Llamar Revisor": {
+    "delegar_terminal_coder": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor Maestro",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "delegar_revisor": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor Maestro",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "delegar_devops": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor Maestro",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar_memoria": {
       "ai_tool": [
         [
           {
