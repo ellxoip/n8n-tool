@@ -4,43 +4,44 @@
   "roles": {
     "supervisor": {
       "label": "Supervisor (routing rapido)",
-      "preferred": "qwen3.5:4b",
-      "fallbacks": ["qwen3:4b", "mistral-small:latest"],
+      "preferred": "qwen3.5:9b-q4_K_M",
+      "fallbacks": ["qwen2.5:7b-instruct", "qwen3.5:4b-q4_K_M"],
       "numCtx": 8192,
       "required": true
     },
     "analyst": {
-      "label": "Analista (razonamiento MoE)",
-      "preferred": "qwen3.5:35b-a3b",
-      "fallbacks": ["qwen3:30b-a3b", "deepseek-r1:14b"],
-      "numCtx": 16384,
+      "label": "Analista (razonamiento multimodal)",
+      "preferred": "qwen3.5:9b-q4_K_M",
+      "fallbacks": ["qwen2.5:7b-instruct", "qwen3.5:4b-q4_K_M"],
+      "numCtx": 8192,
       "required": true
     },
     "programmer": {
-      "label": "Programador (agentic coding MoE)",
-      "preferred": "qwen3-coder-next:latest",
-      "fallbacks": ["qwen3-coder:30b", "deepseek-coder-v2:16b"],
-      "numCtx": 16384,
+      "label": "Programador (agentic coding)",
+      "preferred": "qwen3.5:9b-q4_K_M",
+      "fallbacks": ["qwen2.5:7b-instruct", "qwen3.5:4b-q4_K_M"],
+      "numCtx": 8192,
       "required": true
     },
     "reviewer": {
-      "label": "Revisor QA (modelo distinto al programador)",
-      "preferred": "gemma4:26b",
-      "fallbacks": ["qwen3-coder:30b", "deepseek-coder-v2:16b"],
-      "numCtx": 16384,
+      "label": "Revisor QA",
+      "preferred": "qwen3.5:9b-q4_K_M",
+      "fallbacks": ["qwen2.5:7b-instruct", "qwen3.5:4b-q4_K_M"],
+      "numCtx": 8192,
       "required": true
     },
     "devops": {
       "label": "DevOps Runtime (ligero)",
-      "preferred": "qwen3.5:4b",
-      "fallbacks": ["qwen3:4b", "mistral-small:latest"],
+      "preferred": "qwen3.5:9b-q4_K_M",
+      "fallbacks": ["qwen2.5:7b-instruct", "qwen3.5:4b-q4_K_M"],
       "numCtx": 8192,
       "required": true
     },
     "vision": {
       "label": "Vision / OCR",
-      "preferred": "qwen3-vl:8b",
-      "fallbacks": ["qwen3-vl:4b", "qwen2.5vl:7b", "llama3.2-vision:11b"],
+      "preferred": "qwen3.5:9b-q4_K_M",
+      "fallbacks": ["qwen3-vl:4b", "qwen2.5vl:7b"],
+      "numCtx": 8192,
       "required": false
     },
     "embedding": {
@@ -60,6 +61,7 @@
     "agente_terminal_coder.json": { "role": "programmer" },
     "ocr_vision.json": { "role": "vision" },
     "voz_tts.json": {},
+    "voz_interfaz.json": {},
     "voz_agente.json": { "role": "supervisor" }
   }
 }

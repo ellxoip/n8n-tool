@@ -4,6 +4,7 @@ const fs = require('fs');
 const http = require('http');
 const path = require('path');
 const crypto = require('crypto');
+const os = require('os');
 const { spawn } = require('child_process');
 const { loadEnv } = require('./lib/common');
 
@@ -99,7 +100,9 @@ async function ensureBridge() {
     return;
   }
   console.log('Bridge: iniciando...');
-  spawnDetached(nodeCmd, [path.join(root, 'services', 'bridge', 'server.js')], 'bridge.log');
+  if (!(await startManagedService('n8n-tool-bridge.service'))) {
+    spawnDetached(nodeCmd, [path.join(root, 'services', 'bridge', 'server.js')], 'bridge.log');
+  }
   try {
     await waitFor('Bridge', isBridgeOnline, 15000);
     console.log('Bridge: online');
@@ -124,9 +127,21 @@ async function ensureN8n() {
     return;
   }
   console.log('n8n: iniciando...');
-  spawnDetached(nodeCmd, [path.join(root, 'scripts', 'start-n8n.js')], 'n8n.log');
+  if (!(await startManagedService('n8n-tool.service'))) {
+    spawnDetached(nodeCmd, [path.join(root, 'scripts', 'start-n8n.js')], 'n8n.log');
+  }
   await waitFor('n8n', isN8nOnline, Number(process.env.N8N_TOOL_START_TIMEOUT_MS || 60000));
   console.log('n8n: online');
+}
+
+async function startManagedService(name) {
+  if (process.platform !== 'linux' || !fs.existsSync(path.join(os.homedir(), '.config', 'systemd', 'user', name))) return false;
+  await new Promise((resolve, reject) => {
+    const child = spawn('systemctl', ['--user', 'start', name], { stdio: 'inherit' });
+    child.on('error', reject);
+    child.on('exit', code => code === 0 ? resolve() : reject(new Error(`No se pudo iniciar ${name}. Revisa systemctl --user status ${name}`)));
+  });
+  return true;
 }
 
 async function ensureOllama() {

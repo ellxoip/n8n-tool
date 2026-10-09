@@ -36,6 +36,8 @@
     "node": ">=22.16"
   },
   "dependencies": {
+    "fast-xml-parser": "5.11.2",
+    "httpolyglot": "0.1.2",
     "n8n": "2.20.9"
   }
 }

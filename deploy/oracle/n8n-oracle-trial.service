@@ -1,0 +1,16 @@
+[Unit]
+Description=n8n AI Team Oracle trial in /data
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/data/n8n-ai-team/app/deploy/oracle/start.sh
+ExecStop=/data/n8n-ai-team/app/deploy/oracle/podman.sh pod stop --time 30 n8n-oracle-trial
+TimeoutStartSec=180
+TimeoutStopSec=90
+UMask=0077
+
+[Install]
+WantedBy=default.target

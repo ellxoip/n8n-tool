@@ -1,0 +1,8 @@
+FROM docker.io/library/node:24.16.0-bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-venv git curl screen ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN curl -fL https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.aarch64 -o /usr/local/bin/ttyd && chmod 755 /usr/local/bin/ttyd
+RUN npm install --prefix /opt/runtime --omit=dev httpolyglot@0.1.2 fast-xml-parser@5.11.2
+RUN python3 -m venv /opt/voice && /opt/voice/bin/pip install --no-cache-dir piper-tts==1.8.0 faster-whisper==1.2.1 av==16.1.0 fastapi==0.143.0 uvicorn==0.54.0 python-multipart==0.0.32
+RUN python3 -m venv /opt/aider && /opt/aider/bin/pip install --no-cache-dir aider-chat==0.86.2
+ENV NODE_PATH=/opt/runtime/node_modules PATH=/opt/voice/bin:/opt/aider/bin:$PATH
+WORKDIR /app

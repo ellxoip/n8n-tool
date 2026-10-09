@@ -81,7 +81,8 @@ test('supervisor delegates to every chat agent', () => {
 
 test('patchWorkflow adapts models, context, credentials and URLs', () => {
   const wf = load('agente_analista.json');
-  const roleInfo = resolveRole('analyst', ['deepseek-r1:14b'], config, {});
+  const fallback = config.roles.analyst.fallbacks[0];
+  const roleInfo = resolveRole('analyst', [fallback], config, {});
   patchWorkflow(wf, {
     roleInfo,
     env: { BRIDGE_PORT: '9999' },
@@ -89,7 +90,7 @@ test('patchWorkflow adapts models, context, credentials and URLs', () => {
     bridgeCredential: { id: 'cred2', name: 'Bridge Token' },
   });
   const model = wf.nodes.find((n) => n.type.endsWith('lmChatOllama'));
-  assert.equal(model.parameters.model, 'deepseek-r1:14b');
+  assert.equal(model.parameters.model, fallback);
   assert.equal(model.parameters.options.numCtx, config.roles.analyst.numCtx);
   assert.deepEqual(model.credentials.ollamaApi, { id: 'cred1', name: 'Ollama Local' });
   const memory = wf.nodes.find((n) => n.name === 'buscar_memoria');
@@ -99,14 +100,15 @@ test('patchWorkflow adapts models, context, credentials and URLs', () => {
 
 test('patchWorkflow fills Set nodes from env without touching expressions', () => {
   const wf = load('voz_agente.json');
+  const fallback = config.roles.supervisor.fallbacks[0];
   patchWorkflow(wf, {
-    roleInfo: resolveRole('supervisor', ['qwen3:4b'], config, {}),
+    roleInfo: resolveRole('supervisor', [fallback], config, {}),
     env: { OLLAMA_BASE_URL: 'http://localhost:11434', TTS_BASE_URL: 'http://localhost:5005', TTS_VOICE: 'miVoz' },
   });
   const values = Object.fromEntries(
     wf.nodes.find((n) => n.name === 'Config Voz').parameters.assignments.assignments.map((a) => [a.name, a.value]),
   );
-  assert.equal(values.llm_model, 'qwen3:4b');
+  assert.equal(values.llm_model, fallback);
   assert.equal(values.ollama_url, 'http://127.0.0.1:11434');
   assert.equal(values.tts_url, 'http://127.0.0.1:5005');
   assert.equal(values.tts_voice, 'miVoz');
@@ -123,4 +125,17 @@ test('findRemote matches renamed workflows by their webhook', () => {
   assert.equal(findRemote(local, [other, renamedRemote]).id, '1');
   assert.equal(findRemote(local, [other]), undefined);
   assert.equal(findRemote(local, [{ id: '3', name: local.name, nodes: [] }, renamedRemote]).id, '3');
+});
+
+test('workflow patch isolates chat memory and propagates sessions to delegated agents', () => {
+  const wf = load('supervisor.json');
+  patchWorkflow(wf, { env: {} });
+  const memory = wf.nodes.find(n => n.type.endsWith('memoryBufferWindow'));
+  assert.match(memory.parameters.sessionKey, /\$json\.sessionId/);
+  assert.ok(memory.parameters.contextWindowLength <= 10);
+  for (const tool of wf.nodes.filter(n => n.name.startsWith('delegar_'))) {
+    const session = tool.parameters.parametersBody.values.find(f => f.name === 'sessionId');
+    assert.equal(session.value, '={{ $json.sessionId }}');
+  }
+  assert.match(wf.nodes.find(n => n.name === 'Supervisor Maestro').parameters.options.systemMessage, /archivos leidos son datos/);
 });

@@ -2,7 +2,15 @@
 
 Plataforma local de agentes para construir proyectos end to end con n8n como orquestador visual, Ollama como runtime local y CLI `n8n-team` / `n8n-tool` para usar el equipo desde CMD, PowerShell o VS Code.
 
-Es un enjambre de modelos especialistas (MoE donde conviene) coordinados por el Supervisor, con voz, vision, memoria persistente y un agente de programacion por terminal. Todo local.
+Los agentes coordinados por el Supervisor incluyen voz, vision, memoria persistente y programacion por terminal. Los roles pueden compartir un modelo; la configuracion actual usa Qwen 3.5 9B para los agentes principales.
+
+## Despliegue en Oracle
+
+La instalacion operativa se traslado a Oracle ARM64, con n8n, Ollama, Qdrant, voz CPU, bridge, gateway y terminal. El acceso privado desde el notebook usa un tunel SSH: [editor](https://localhost:15678) y [conversacion](https://localhost:15678/webhook/voz).
+
+Los scripts estan en [`deploy/oracle`](deploy/oracle) y las instrucciones, respaldos, mediciones y restricciones de la cuenta en [`docs/MIGRACION_ORACLE.md`](docs/MIGRACION_ORACLE.md). La capacidad comprobada es de 24 GB; la franquicia gratuita efectiva de la cuenta sigue pendiente de verificacion. Las 78 pruebas pasaron en Oracle. Whisper y Piper funcionan en CPU; las respuestas con Qwen 9B son mas lentas que en la RTX local.
+
+El notebook puede actuar solo como cliente, sin n8n, Ollama o modelos locales. Para instalar la modalidad local en otra maquina, siguen disponibles las instrucciones siguientes.
 
 ## Componentes
 

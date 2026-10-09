@@ -24,8 +24,9 @@ test('resolveRole prefers the preferred model when installed', () => {
 });
 
 test('resolveRole falls back to an installed legacy model', () => {
-  const info = resolveRole('analyst', ['deepseek-r1:14b'], config, {});
-  assert.equal(info.selected, 'deepseek-r1:14b');
+  const fallback = config.roles.analyst.fallbacks[0];
+  const info = resolveRole('analyst', [fallback], config, {});
+  assert.equal(info.selected, fallback);
   assert.equal(info.usingFallback, true);
   assert.equal(info.installed, true);
 });

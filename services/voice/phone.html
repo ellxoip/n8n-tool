@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Conversación por voz</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#10151e;color:#ecf2fa}body{max-width:640px;margin:auto;padding:24px}p{line-height:1.5;color:#b7c6d9}button,textarea,select{font:inherit;border-radius:14px;border:1px solid #334155;padding:14px}button{background:#22344d;color:white;cursor:pointer;min-height:52px}button:disabled{opacity:.5}#mic{width:100%;background:#4168ed;font-size:1.15rem;font-weight:600;margin:12px 0}#mic[data-state=recording]{background:#be354c}#mic[data-state=listening]{background:#23745d}textarea{width:100%;box-sizing:border-box;background:#172230;color:white}.row{display:flex;gap:10px;margin:12px 0;flex-wrap:wrap}.row button,.row label{flex:1}select{display:block;width:100%;background:#172230;color:white;margin-top:6px}#log article{margin:14px 0;padding:16px;background:#172230;border-radius:16px;white-space:pre-wrap;overflow-wrap:anywhere}#log strong{color:#92b5ff}audio{width:100%;margin-top:12px}.hint,label{font-size:.9rem}#status{min-height:48px;color:#abc7ff}a{color:#abc7ff}meter{width:100%;height:14px}summary{cursor:pointer;padding:12px 0}
+</style>
+<h1>Habla con tu IA</h1>
+<p>Activa la conversación una vez. Habla y haz una pausa: tu pregunta se envía sola y la IA te responde con voz.</p>
+<button id="mic" aria-pressed="false" data-state="off">🎙️ Activar conversación</button>
+<meter id="level" min="0" max="1" value="0" aria-label="Nivel del micrófono"></meter>
+<div id="status" role="status" aria-live="polite">Listo para conversar.</div>
+<p id="memory" class="hint" aria-label="Contexto de la conversación"></p>
+<p id="hint" class="hint">Detecta tu voz y envía al terminar la frase. Puedes hablar de nuevo después de la respuesta.</p>
+<p id="secure" class="hint" hidden>Para activar el micrófono: <a href="/local-ca.crt">descarga el certificado local</a>, instálalo como certificado de confianza y <a id="https" href="#">abre HTTPS</a>. Android: Ajustes → Seguridad → Instalar certificado CA. iPhone: instala el perfil y activa su confianza en Ajustes → General → Información → Ajustes de confianza de certificados.</p>
+<div class="row"><button id="stop">Interrumpir respuesta</button><button id="reset">Nueva charla</button></div>
+<details><summary>Ajustes y otras formas de hablar</summary>
+<div class="row"><label>Detección<select id="sensitivity"><option value="2.8">Normal</option><option value="1.8">Voz suave</option><option value="4.5">Ambiente con ruido</option></select></label><label>Pausa para enviar<select id="silence"><option value="1100">1,1 segundos</option><option value="1700">1,7 segundos</option><option value="2300">2,3 segundos</option></select></label></div>
+<label>Consulta web<select id="web"><option value="auto">Automática según la pregunta</option><option value="always">Buscar en cada pregunta</option><option value="off">Sin Internet</option></select></label>
+<label>Ciudad para el clima (opcional)<input id="city" type="text" maxlength="100" placeholder="Por ejemplo: Valparaíso, Chile"></label>
+<textarea id="text" rows="2" placeholder="También puedes escribir o dictar con el teclado"></textarea>
+<div class="row"><button id="send">Enviar texto</button><button id="attach">Adjuntar audio</button></div>
+<input id="capture" type="file" accept="audio/*" capture hidden></details>
+<audio id="player" controls playsinline preload="none"></audio><div id="log"></div>
+<p class="hint">Los audios se liberan después de usarlos; no se guardan como historial. El micrófono se pausa mientras la IA piensa o habla y se apaga al salir de esta pantalla. La búsqueda envía la consulta a servicios de Internet; el audio se procesa en tu notebook.</p>
+<p class="hint"><a href="/webhook/agente-supervisor/chat">Agentes y archivos</a> · <a href="/terminal/">Terminal del notebook</a> · <a href="/trabajos">Autorizar trabajos y revisar avances</a></p>
+<script type="module" src="/voz-assets/conversation.mjs"></script></html>

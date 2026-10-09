@@ -9,10 +9,13 @@ const crypto = require('crypto');
 const http = require('http');
 const path = require('path');
 
-const { loadEnv, ollamaBaseUrl } = require('../../scripts/lib/common');
+const { loadEnv, ollamaBaseUrl, root } = require('../../scripts/lib/common');
 const { selectedModel } = require('../../scripts/lib/models');
 const memory = require('../../scripts/lib/memory');
 const terminal = require('./terminal');
+const projects = require('./projects');
+const { createJobStore } = require('./jobs');
+const { answerVoice, searchWeb, warmVoiceModel, createFactResponder } = require('./voice-context');
 
 loadEnv();
 
@@ -55,9 +58,16 @@ function send(res, status, body) {
   res.end(payload);
 }
 
-function createServer({ token }) {
+function createServer({ token, jobStore }) {
+  let jobs = jobStore;
+  const getJobs = () => jobs ||= createJobStore({ directory: path.join(root, '.runtime', 'jobs'), execute: async (body, onProgress) => terminal.runTerminalTask(body, { model: await selectedModel('programmer'), ollamaBase: ollamaBaseUrl(), onProgress }) });
   const routes = {
+    'POST /facts/current': createFactResponder(),
+    'POST /voice/answer': answerVoice,
+    'POST /web/search': body => searchWeb(body.query),
     'GET /health': async () => ({ ok: true, service: 'n8n-tool-bridge', workspace: terminal.workspaceRoot() }),
+
+    'POST /projects/inspect': async (body) => projects.inspectProject(body.path),
 
     'POST /terminal/run': async (body) => {
       const model = body.model || await selectedModel('programmer');
@@ -77,7 +87,12 @@ function createServer({ token }) {
 
   return http.createServer(async (req, res) => {
     const pathname = new URL(req.url, 'http://bridge.local').pathname;
-    const route = routes[`${req.method} ${pathname}`];
+    let route = routes[`${req.method} ${pathname}`];
+    if (pathname === '/jobs' && req.method === 'GET') route = async () => ({ jobs: getJobs().list() });
+    if (pathname === '/jobs' && req.method === 'POST') route = async body => getJobs().create(body);
+    const jobMatch = pathname.match(/^\/jobs\/([a-f0-9-]+)(?:\/(approve|reject|accept|changes))?$/);
+    if (jobMatch && req.method === 'GET' && !jobMatch[2]) route = async () => getJobs().get(jobMatch[1]);
+    if (jobMatch && req.method === 'POST' && jobMatch[2]) route = async () => getJobs().action(jobMatch[1], jobMatch[2]);
     if (!route) return send(res, 404, { ok: false, error: 'Ruta no encontrada.' });
 
     if (pathname !== '/health') {
@@ -109,6 +124,7 @@ function main() {
   }
   createServer({ token }).listen(port, host, () => {
     console.log(`Bridge escuchando en http://${host}:${port} (workspace: ${path.relative(process.cwd(), terminal.workspaceRoot()) || '.'})`);
+    warmVoiceModel().then(() => console.log('Modelo de voz preparado en memoria.')).catch(error => console.warn('No se pudo precargar el modelo de voz: ' + error.message));
   });
 }
 

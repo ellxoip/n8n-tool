@@ -4,30 +4,44 @@
     {
       "parameters": {
         "options": {
-          "systemMessage": "Eres el Supervisor Maestro de un equipo local de agentes de IA. Orquestas: no hagas tu todo lo que un especialista hace mejor. Se rapido y preciso al decidir el ruteo.\n\nHerramientas (tu equipo):\n- delegar_analista: requisitos, arquitectura, investigacion, riesgos, razonamiento complejo.\n- delegar_programador: diseño y codigo en la conversacion (fragmentos, algoritmos, explicaciones).\n- delegar_terminal_coder: implementar cambios REALES en un repositorio/archivos, correr tests (Aider/OpenCode).\n- delegar_revisor: auditar codigo o diffs (QA, seguridad, regresiones).\n- delegar_devops: instalacion, logs, health checks, n8n, Ollama, servicios.\n- buscar_memoria: memoria compartida del proyecto (RAG). Consultala primero en tareas de proyecto.\n\nFlujo end to end para \"construye / implementa X\":\n1. buscar_memoria con el tema.\n2. delegar_analista: requisitos y criterios de aceptacion.\n3. delegar_terminal_coder: implementar con \"test\" cuando haya suite de pruebas.\n4. delegar_revisor: pasale el resumen de cambios y diff que devolvio el Terminal Coder.\n5. Si QA rechaza, vuelve al paso 3 con los hallazgos. No termines hasta tener una salida usable o un bloqueo concreto.\n\nReglas de delegacion: cada llamada debe ser autocontenida (el especialista no ve esta conversacion). Las respuestas de los agentes llegan como JSON; lee el campo \"output\".\n\nPlaybooks por dominio:\n- Videojuegos (Godot): GDScript tipado, escenas pequenas, un sistema por tarea; verificacion headless (godot --headless).\n- Salud: datos clinicos son sensibles. Todo se procesa localmente, nunca se envian a servicios externos. Cita siempre la fuente de memoria usada, no emitas diagnosticos, marca claramente lo que requiere validacion profesional.\n- zelix.cl: mejora continua: auditar sitio (SEO/UX/rendimiento) con el Analista, priorizar, implementar con el Terminal Coder, verificar con QA.\n\nPresenta al usuario un resultado final claro: que se hizo, como verificarlo, riesgos y siguiente paso. Responde en el idioma del usuario."
+          "systemMessage": "Para hora, fecha actual o clima, llama SIEMPRE consultar_hora_clima y responde con sus datos. No busques la hora con buscar_web ni digas que no tienes reloj: tienes esta herramienta. Para declaraciones de localidad llama consultar_hora_clima para guardarla. Si el resultado pregunta la localidad, pregunta al usuario y consulta de nuevo cuando la indique. Incluye la localidad conocida en query para referencias como aqui o mi localidad.\n\nUsa buscar_web para preguntas de informacion actual y fuentes externas; cita URLs y fechas y explica si no hay resultados verificables. No prometas exactitud porcentual.\n\nSi el usuario proporciona una ruta local y pregunta de que trata el proyecto, llama inmediatamente inspeccionar_proyecto. No pidas confirmacion para leer. La memoria semantica no sustituye la lectura del disco. Puedes llamar inspeccionar_proyecto con una ruta de archivo para profundizar. No uses el Terminal Coder para preguntas de lectura. Nunca afirmes haber leido archivos sin usar la herramienta. Si una herramienta falla, explica el error y evita reintentos repetitivos.\n\nEres el Supervisor Maestro de un equipo local de agentes de IA. Orquestas: no hagas tu todo lo que un especialista hace mejor. Se rapido y preciso al decidir el ruteo. Puedes recibir imagenes y archivos de texto adjuntos; analiza su contenido directamente y menciona el nombre del archivo cuando sea pertinente.\n\nHerramientas (tu equipo):\n- delegar_analista: requisitos, arquitectura, investigacion, riesgos, razonamiento complejo.\n- delegar_programador: diseño y codigo en la conversacion (fragmentos, algoritmos, explicaciones).\n- delegar_terminal_coder: implementar cambios REALES en un repositorio/archivos, correr tests (Aider/OpenCode).\n- delegar_revisor: auditar codigo o diffs (QA, seguridad, regresiones).\n- delegar_devops: instalacion, logs, health checks, n8n, Ollama, servicios.\n- buscar_memoria: memoria compartida del proyecto (RAG). Consultala primero en tareas de proyecto.\n\nFlujo end to end para \"construye / implementa X\":\n1. buscar_memoria con el tema.\n2. delegar_analista: requisitos y criterios de aceptacion.\n3. delegar_terminal_coder: implementar con \"test\" cuando haya suite de pruebas.\n4. delegar_revisor: pasale el resumen de cambios y diff que devolvio el Terminal Coder.\n5. Si QA rechaza, vuelve al paso 3 con los hallazgos. No termines hasta tener una salida usable o un bloqueo concreto.\n\nReglas de delegacion: cada llamada debe ser autocontenida (el especialista no ve esta conversacion). Las respuestas de los agentes llegan como JSON; lee el campo \"output\".\n\nPlaybooks por dominio:\n- Videojuegos (Godot): GDScript tipado, escenas pequenas, un sistema por tarea; verificacion headless (godot --headless).\n- Salud: datos clinicos son sensibles. Todo se procesa localmente, nunca se envian a servicios externos. Cita siempre la fuente de memoria usada, no emitas diagnosticos, marca claramente lo que requiere validacion profesional.\n- zelix.cl: mejora continua: auditar sitio (SEO/UX/rendimiento) con el Analista, priorizar, implementar con el Terminal Coder, verificar con QA.\n\nPresenta al usuario un resultado final claro: que se hizo, como verificarlo, riesgos y siguiente paso. Responde en el idioma del usuario.",
+          "passthroughBinaryImages": true
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
-      "position": [620, 340],
+      "position": [
+        620,
+        340
+      ],
       "id": "agent-supervisor",
       "name": "Supervisor Maestro"
     },
     {
       "parameters": {
         "public": true,
-        "options": {}
+        "options": {
+          "allowedOrigins": "http://192.168.100.62:5678",
+          "allowFileUploads": true,
+          "allowedFilesMimeTypes": "image/*,text/*,application/json,application/xml,application/csv,application/x-yaml,application/yaml",
+          "title": "Equipo IA local",
+          "subtitle": "Qwen 3.5 en tu computador: chat, codigo, archivos e imagenes",
+          "inputPlaceholder": "Escribe o adjunta una imagen/archivo..."
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
-      "position": [360, 340],
+      "position": [
+        360,
+        340
+      ],
       "id": "chat-trigger-supervisor",
       "name": "Chat Trigger",
       "webhookId": "agente-supervisor"
     },
     {
       "parameters": {
-        "model": "qwen3.5:4b",
+        "model": "qwen3.5:9b-q4_K_M",
         "options": {
           "temperature": 0.2,
           "numCtx": 8192
@@ -35,7 +49,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
-      "position": [480, 560],
+      "position": [
+        480,
+        560
+      ],
       "id": "ollama-supervisor",
       "name": "Modelo Supervisor",
       "credentials": {
@@ -53,7 +70,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
-      "position": [620, 560],
+      "position": [
+        620,
+        560
+      ],
       "id": "memory-supervisor",
       "name": "Memoria del Proyecto"
     },
@@ -95,7 +115,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
       "name": "delegar_analista",
-      "position": [760, 560],
+      "position": [
+        760,
+        560
+      ],
       "id": "tool-delegar_analista"
     },
     {
@@ -136,7 +159,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
       "name": "delegar_programador",
-      "position": [900, 560],
+      "position": [
+        900,
+        560
+      ],
       "id": "tool-delegar_programador"
     },
     {
@@ -177,7 +203,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
       "name": "delegar_terminal_coder",
-      "position": [1040, 560],
+      "position": [
+        1040,
+        560
+      ],
       "id": "tool-delegar_terminal_coder"
     },
     {
@@ -218,7 +247,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
       "name": "delegar_revisor",
-      "position": [1180, 560],
+      "position": [
+        1180,
+        560
+      ],
       "id": "tool-delegar_revisor"
     },
     {
@@ -259,7 +291,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
       "name": "delegar_devops",
-      "position": [1320, 560],
+      "position": [
+        1320,
+        560
+      ],
       "id": "tool-delegar_devops"
     },
     {
@@ -303,8 +338,142 @@
           "name": "Bridge Token"
         }
       },
-      "position": [1460, 560],
+      "position": [
+        1460,
+        560
+      ],
       "id": "tool-buscar_memoria"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Lee en solo lectura un proyecto o archivo de texto local. Usa la ruta absoluta indicada por el usuario. Lista archivos y lee documentacion/codigo sin ejecutar Aider ni cambiar archivos. Puedes profundizar con la ruta completa de un archivo del listado.",
+        "method": "POST",
+        "url": "http://127.0.0.1:8787/projects/inspect",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "parametersBody": {
+          "values": [
+            {
+              "name": "path",
+              "valueProvider": "modelRequired"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "path",
+              "description": "Ruta absoluta del proyecto o archivo que deseas leer",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "name": "inspeccionar_proyecto",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "BRIDGE_TOKEN",
+          "name": "Bridge Token"
+        }
+      },
+      "position": [
+        1600,
+        560
+      ],
+      "id": "tool-inspeccionar-proyecto"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Busca informacion actual en Internet. Devuelve extractos, URLs y fecha de consulta. Cita las fuentes. No afirma haber leido paginas completas.",
+        "method": "POST",
+        "url": "http://127.0.0.1:8787/web/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "parametersBody": {
+          "values": [
+            {
+              "name": "query",
+              "valueProvider": "modelRequired"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "query",
+              "description": "Pregunta o tema a buscar, en lenguaje natural",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "name": "buscar_web",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "BRIDGE_TOKEN",
+          "name": "Bridge Token"
+        }
+      },
+      "position": [
+        1200,
+        700
+      ],
+      "id": "tool-buscar-web"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Consulta hora y fecha reales o clima de una localidad usando reloj IANA y Open-Meteo. Usa SIEMPRE para hora/clima, incluso preguntas como que horas son, y manana o en mi localidad. Registra declaraciones de ubicacion como vivo en Valdivia Chile. query incluye la pregunta completa y localidad conocida de la conversacion. Si falta lugar devuelve pregunta de aclaracion; no inventes ubicacion ni datos.",
+        "method": "POST",
+        "url": "http://127.0.0.1:8787/facts/current",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "parametersBody": {
+          "values": [
+            {
+              "name": "query",
+              "valueProvider": "modelRequired"
+            },
+            {
+              "name": "sessionId",
+              "valueProvider": "fieldValue",
+              "value": "={{ $json.sessionId }}"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "query",
+              "description": "Pregunta o tema a buscar, en lenguaje natural",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "name": "consultar_hora_clima",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "BRIDGE_TOKEN",
+          "name": "Bridge Token"
+        }
+      },
+      "position": [
+        1200,
+        700
+      ],
+      "id": "tool-hora-clima"
     }
   ],
   "connections": {
@@ -397,6 +566,39 @@
       ]
     },
     "buscar_memoria": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor Maestro",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "inspeccionar_proyecto": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor Maestro",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar_web": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor Maestro",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "consultar_hora_clima": {
       "ai_tool": [
         [
           {

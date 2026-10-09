@@ -59,7 +59,7 @@ function buildEngineCommand(engine, { task, model, ollamaBase }, env = process.e
   };
 }
 
-function runProcess(command, args, { cwd, env = {}, timeoutMs = 600000, maxBytes = MAX_OUTPUT_BYTES, shell = false } = {}) {
+function runProcess(command, args, { cwd, env = {}, timeoutMs = 600000, maxBytes = MAX_OUTPUT_BYTES, shell = false, onOutput } = {}) {
   return new Promise((resolve) => {
     let output = '';
     let truncated = false;
@@ -80,6 +80,7 @@ function runProcess(command, args, { cwd, env = {}, timeoutMs = 600000, maxBytes
     const append = (chunk) => {
       if (output.length >= maxBytes) { truncated = true; return; }
       output += chunk.toString('utf8');
+      if (onOutput) onOutput(output.slice(-maxBytes));
       if (output.length > maxBytes) {
         output = output.slice(0, maxBytes);
         truncated = true;
@@ -123,7 +124,7 @@ async function gitChanges(cwd, before) {
 
 let busy = false;
 
-async function runTerminalTask(request, { model, ollamaBase, env = process.env } = {}) {
+async function runTerminalTask(request, { model, ollamaBase, env = process.env, onProgress } = {}) {
   if (busy) {
     const err = new Error('Ya hay una tarea de terminal en curso. Espera a que termine.');
     err.status = 409;
@@ -149,7 +150,7 @@ async function runTerminalTask(request, { model, ollamaBase, env = process.env }
   try {
     const before = await gitSnapshot(cwd);
     const started = Date.now();
-    const run = await runProcess(spec.command, spec.args, { cwd, env: spec.env, timeoutMs });
+    const run = await runProcess(spec.command, spec.args, { cwd, env: spec.env, timeoutMs, onOutput: onProgress });
     const changes = await gitChanges(cwd, before);
 
     let tests = null;

@@ -1,0 +1,13 @@
+{
+  "name": "📱 Conversacion por voz Wi-Fi",
+  "nodes": [
+    {"parameters":{"httpMethod":"GET","path":"voz","responseMode":"responseNode","options":{}},"type":"n8n-nodes-base.webhook","typeVersion":2,"position":[240,300],"id":"voice-page-trigger","name":"Abrir Voz","webhookId":"voz"},
+    {"parameters":{"url":"http://127.0.0.1:8000/page","options":{"timeout":10000,"response":{"response":{"responseFormat":"text","outputPropertyName":"html"}}}},"type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[480,300],"id":"voice-page-fetch","name":"Pagina Local"},
+    {"parameters":{"respondWith":"text","responseBody":"={{ $json.html }}","options":{"responseHeaders":{"entries":[{"name":"Content-Type","value":"text/html; charset=utf-8"},{"name":"Cache-Control","value":"no-store"}]}}},"type":"n8n-nodes-base.respondToWebhook","typeVersion":1.1,"position":[720,300],"id":"voice-page-respond","name":"Mostrar Voz"}
+  ],
+  "connections": {
+    "Abrir Voz":{"main":[[{"node":"Pagina Local","type":"main","index":0}]]},
+    "Pagina Local":{"main":[[{"node":"Mostrar Voz","type":"main","index":0}]]}
+  },
+  "settings":{"executionOrder":"v1","saveDataSuccessExecution":"none","saveDataErrorExecution":"none","saveManualExecutions":false,"saveExecutionProgress":false}
+}

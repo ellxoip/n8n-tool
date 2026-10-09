@@ -1,0 +1,12 @@
+[Unit]
+Description=Private access to the n8n Oracle trial
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/ssh -N -F /dev/null -i /home/carlos/Descargas/ssh-key-2026-09-01.key -o BatchMode=yes -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -L 127.0.0.1:15678:127.0.0.1:15678 opc@143.47.111.234
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

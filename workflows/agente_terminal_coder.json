@@ -27,7 +27,7 @@
     },
     {
       "parameters": {
-        "model": "qwen3-coder-next:latest",
+        "model": "qwen3.5:9b-q4_K_M",
         "options": {
           "temperature": 0.2,
           "numCtx": 16384
